@@ -1,0 +1,14 @@
+"""                 
+FIPS codes for counties in the state/territory: Connecticut.
+"""
+
+
+
+FAIRFIELD_COUNTY = '001'
+HARTFORD_COUNTY = '003'
+LITCHFIELD_COUNTY = '005'
+MIDDLESEX_COUNTY = '007'
+NEW_HAVEN_COUNTY = '009'
+NEW_LONDON_COUNTY = '011'
+TOLLAND_COUNTY = '013'
+WINDHAM_COUNTY = '015'
