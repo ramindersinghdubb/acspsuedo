@@ -1,0 +1,87 @@
+name: Update API Metadata/HTML Spider Output
+run-name: Update API Metadata and crawl Census Bureau databases
+
+on:
+
+  schedule:
+      - cron: '30 5 * * *' # Past midnight EST (to track Census data/API releases)
+  
+  workflow_dispatch:
+
+jobs:
+
+  generate-files:
+    name: Run Python script(s) to generate files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          
+      #-------------------------
+      # Check for cached Poetry
+      #-------------------------
+      - name: Load cached Poetry
+        id: cached-poetry
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: poetry-interpreter
+
+      #----------------------------
+      # Install & configure Poetry
+      #----------------------------
+      - name: Install Poetry
+        if: steps.cached-poetry.outputs.cache-hit != 'true'
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+
+      #----------------------------------
+      # Load cached venv if cache exists
+      #----------------------------------
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      
+      #----------------------------------------------
+      # Install dependencies if cache does not exist
+      #----------------------------------------------
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      #----------------------
+      # Install root project
+      #----------------------
+      - name: Install project
+        run: poetry install --no-interaction
+      
+      #------------------------------
+      # Run scripts and commit files
+      #------------------------------
+      - name: Run scripts
+        run: |
+          poetry run python utils/api_metadata.py
+          poetry run python utils/html_trees.py
+      
+      - name: Commit files
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git diff --staged --quiet || git commit -a -m "Generate/update files (GHA)" --allow-empty
+          git push
