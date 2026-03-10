@@ -1,6 +1,6 @@
 """
 
-LAST UPDATED: February 27, 2026
+LAST UPDATED: March 10, 2026
 
 Structured API information for each of the American
 Community Survey's APIs.
@@ -22,6 +22,14 @@ ACS1_CPROFILE = 'ACS1_CPROFILE'
 
 ACS1_PROFILE = 'ACS1_PROFILE'
 
+ACS1_PUMS = 'ACS1_PUMS'
+
+ACS1_PUMSPR = 'ACS1_PUMSPR'
+
+ACS1_SDATAPROFILE_CD119 = 'ACS1_SDATAPROFILE_CD119'
+
+ACS1_SPP = 'ACS1_SPP'
+
 ACS1_SUBJECT = 'ACS1_SUBJECT'
 
 ACS3 = 'ACS3'
@@ -30,15 +38,33 @@ ACS3_CPROFILE = 'ACS3_CPROFILE'
 
 ACS3_PROFILE = 'ACS3_PROFILE'
 
+ACS3_SPP = 'ACS3_SPP'
+
 ACS3_SUBJECT = 'ACS3_SUBJECT'
 
 ACS5 = 'ACS5'
 
+ACS5_AIAN = 'ACS5_AIAN'
+
+ACS5_AIANPROFILE = 'ACS5_AIANPROFILE'
+
 ACS5_CPROFILE = 'ACS5_CPROFILE'
+
+ACS5_EEO = 'ACS5_EEO'
 
 ACS5_PROFILE = 'ACS5_PROFILE'
 
+ACS5_PUMS = 'ACS5_PUMS'
+
+ACS5_PUMSPR = 'ACS5_PUMSPR'
+
+ACS5_SPT = 'ACS5_SPT'
+
+ACS5_SPTPROFILE = 'ACS5_SPTPROFILE'
+
 ACS5_SUBJECT = 'ACS5_SUBJECT'
+
+ACSSE = 'ACSSE'
 
 
 
@@ -67,6 +93,30 @@ API_DATA: t.Dict[
         ['place', 'county', 'state', 'us']
     ),
 
+    'ACS1_PUMS': (
+        'acs/acs1/pums',
+        [2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024],
+        ['state']
+    ),
+
+    'ACS1_PUMSPR': (
+        'acs/acs1/pumspr',
+        [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024],
+        ['state']
+    ),
+
+    'ACS1_SDATAPROFILE_CD119': (
+        'acs/acs1/sdataprofile/cd119',
+        [2023],
+        []
+    ),
+
+    'ACS1_SPP': (
+        'acs/acs1/spp',
+        [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024],
+        ['place', 'county', 'state', 'us']
+    ),
+
     'ACS1_SUBJECT': (
         'acs/acs1/subject',
         [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024],
@@ -91,6 +141,12 @@ API_DATA: t.Dict[
         ['place', 'county', 'state', 'us']
     ),
 
+    'ACS3_SPP': (
+        'acs/acs3/spp',
+        [2009, 2010, 2011, 2012, 2013],
+        ['place', 'county', 'state', 'us']
+    ),
+
     'ACS3_SUBJECT': (
         'acs/acs3/subject',
         [2010, 2011, 2012, 2013],
@@ -103,9 +159,27 @@ API_DATA: t.Dict[
         ['tract', 'place', 'county', 'state', 'us', 'zcta']
     ),
 
+    'ACS5_AIAN': (
+        'acs/acs5/aian',
+        [2010, 2015, 2021],
+        ['state', 'us']
+    ),
+
+    'ACS5_AIANPROFILE': (
+        'acs/acs5/aianprofile',
+        [2010, 2015, 2021],
+        ['state', 'us']
+    ),
+
     'ACS5_CPROFILE': (
         'acs/acs5/cprofile',
         [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        ['place', 'county', 'state', 'us']
+    ),
+
+    'ACS5_EEO': (
+        'acs/acs5/eeo',
+        [2018],
         ['place', 'county', 'state', 'us']
     ),
 
@@ -115,10 +189,40 @@ API_DATA: t.Dict[
         ['tract', 'place', 'county', 'state', 'us', 'zcta']
     ),
 
+    'ACS5_PUMS': (
+        'acs/acs5/pums',
+        [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        ['state']
+    ),
+
+    'ACS5_PUMSPR': (
+        'acs/acs5/pumspr',
+        [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        ['state']
+    ),
+
+    'ACS5_SPT': (
+        'acs/acs5/spt',
+        [2010, 2015, 2021],
+        ['tract', 'place', 'county', 'state', 'us']
+    ),
+
+    'ACS5_SPTPROFILE': (
+        'acs/acs5/sptprofile',
+        [2010, 2021],
+        ['tract', 'place', 'county', 'state', 'us']
+    ),
+
     'ACS5_SUBJECT': (
         'acs/acs5/subject',
         [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
         ['tract', 'place', 'county', 'state', 'us', 'zcta']
+    ),
+
+    'ACSSE': (
+        'acs/acsse',
+        [2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024],
+        ['place', 'county', 'state', 'us']
     ),
 
 }
