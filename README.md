@@ -1,4 +1,4 @@
-# [acspsuedo](https://ramindersinghdubb.github.io/acspsuedo/)
+# [acspsuedo](https://github.com/ramindersinghdubb/acspsuedo/)
 
 [![License](https://img.shields.io/badge/License-MIT-blue)](#license) [![issues - acspsuedo](https://img.shields.io/github/issues/ramindersinghdubb/acspsuedo)](https://github.com/ramindersinghdubb/acspsuedo/issues)
 
@@ -59,6 +59,8 @@ gdf = download_by_geo_collection(
 Note that TIGER shapefiles and/or the supplied API key are automatically cached in the current working directory (`./cache/`). Caching preferences may be disabled by updating the properties of the `CONFIG` object.
 
 ```python
+from acspsuedo.data import CONFIG
+
 CONFIG.is_cache = False
 
 CONFIG.api_key = 'your_api_key'
@@ -69,11 +71,11 @@ CONFIG.cache_path = 'new_cache_path'
 
 ## Repo Structure
 
-```python
+```
 acspsuedo/
 ├── .github/
 │   └── workflows/
-│       └── python-scripts.yml
+│       └── acs-api.yml
 │
 ├── acspsuedo/
 │   ├── fips/                            # Federal Information Processing Standard (FIPS) Codes
@@ -91,7 +93,7 @@ acspsuedo/
 │   ├── __init__.py
 │   ├── api.py                           # Info on supported APIs
 │   ├── config.py
-│   ├── data.py                          # High-level objects to download ACS data
+│   ├── data.py                          # High-level objects to download/query ACS data
 │   └── geographies.py                   # TIGER Shapefiles for select geographic scopes
 │
 ├── crawled_html/
