@@ -101,7 +101,7 @@ def write_api_metadata() -> None:
     
     df = create_acs_api_dataset()
 
-    FILE_PATH = 'private/api.py'
+    FILE_PATH = 'acspsuedo/api.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
 
@@ -236,7 +236,7 @@ _GEO_PARENT_CHILD_DICT: t.Dict[
 }
 ''')
 
-    logger.info("Successfully wrote the ACS API script: '~/func/api.py'")
+    logger.info("Successfully wrote the ACS API script: '~/acspsuedo/api.py'")
 
 
 
