@@ -7,4 +7,4 @@ their respective county names appended.
 
 
 
-WASHINGTON = '50000'
+Washington = '50000'

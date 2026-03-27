@@ -1,25 +1,21 @@
 """
+FOLDER LAST UPDATED: March 20, 2026                   
 
-FOLDER LAST UPDATED: February 22, 2026                   
-
-Federal Information Processing Series (FIPS)
-codes for geographic scopes.
+Federal Information Processing Series (FIPS) codes for
+geographic scopes.
                    
-FIPS codes are used to format TIGER shapefiles
-and query American Community Survey (ACS) data
-with the Census Bureau's API.
-
+FIPS codes are used to format TIGER shapefiles and query
+American Community Survey datasets using the Census Bureau's
+API.
 """
 
-from acspsuedo.fips._zcta import ZCTA
-from acspsuedo.fips._place import PLACE
-from acspsuedo.fips._county import COUNTY
-from acspsuedo.fips.states import STATE_FIPS, STATE_FIPS_ABBREV
+from acspsuedo.fips._place import PLACE_BY_STATE
+from acspsuedo.fips._county import COUNTY_BY_STATE
+from acspsuedo.fips.states import STATE_FIPS, ABBREV_STATE_FIPS
 
 __all__ = [
-    "COUNTY",
-    "PLACE",
-    "ZCTA",
+    "COUNTY_BY_STATE",
+    "PLACE_BY_STATE",
     "STATE_FIPS",
-    "STATE_FIPS_ABBREV"
+    "ABBREV_STATE_FIPS"
 ]

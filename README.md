@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue)](#license) [![issues - acspsuedo](https://img.shields.io/github/issues/ramindersinghdubb/acspsuedo)](https://github.com/ramindersinghdubb/acspsuedo/issues)
 
-Objects for handling the extraction of American Community Survey data on collections of geographies.
+Objects for handling the extraction of American Community Survey data.
 
 
 ## Installation
@@ -19,22 +19,21 @@ See [notebooks](https://ramindersinghdubb.github.io/acspsuedo/tree/mainnotebooks
 
 <br>
 
-`acspsuedo` handles the extraction of ACS data for a collection of geographies. Thus, if one were interested in the [B25058 "Median Contract Rents" dataset of the American Community Survey's 5-Year Estimates Detailed Tables API at the census tract level for Los Angeles, California](https://data.census.gov/table?q=B25058&g=160XX00US0644000$1400000), it would be as so.
+`acspsuedo` handles the extraction of ACS data. For example, if one were interested in the [B25058 "Median Contract Rents" dataset of the American Community Survey's 5-Year Estimates Detailed Tables API at the census tract level for California](https://api.census.gov/data/2024/acs/acs5?get=group(B25058)&for=tract:*&in=state:06), it would be as so.
 
 ```python
-from acspsuedo.data import download_by_geo_collection
+from acspsuedo.query import download
 
 from acspsuedo.api import ACS5
 from acspsuedo.fips.states import CA
 from acspsuedo.fips.places.CA import LOS_ANGELES
 
-df = download_by_geo_collection(
-    api       = ACS5,
+df = download(
+    dataset   = ACS5,
     year      = 2024,
-    dataset   = 'B25058',
-    geography = 'tract',
+    table = 'B25058',
     state = CA,
-    place = LOS_ANGELES
+    tract = '*'
 )
 ```
 
@@ -42,32 +41,11 @@ df = download_by_geo_collection(
 
 <br>
 
-You can also specify whether or not to include optional geographic information from the [Census Bureau's TIGER Shapefile database](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) with the `include_geometries` argument.
+~~You can also specify whether or not to include optional geographic information from the [Census Bureau's TIGER Shapefile database](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) with the `include_geometries` argument.~~
 
-```python
-gdf = download_by_geo_collection(
-    api                = ACS5,
-    year               = 2024,
-    dataset            = 'B25058',
-    geography          = 'tract',
-    include_geometries = True,
-    state = CA,
-    place = LOS_ANGELES
-)
-```
+~~Note that TIGER shapefiles and/or the supplied API key are automatically cached in the current working directory (`./cache/`). Caching preferences may be disabled by updating the properties of the `CONFIG` object.~~
 
-Note that TIGER shapefiles and/or the supplied API key are automatically cached in the current working directory (`./cache/`). Caching preferences may be disabled by updating the properties of the `CONFIG` object.
-
-```python
-from acspsuedo.data import CONFIG
-
-CONFIG.is_cache = False
-
-CONFIG.api_key = 'your_api_key'
-
-CONFIG.is_cache = True
-CONFIG.cache_path = 'new_cache_path'
-```
+**SHAPEFILE/GEOGRAPHIC HANDLING IS IN DEVELOPMENT.**
 
 ## Repo Structure
 
@@ -78,28 +56,16 @@ acspsuedo/
 │       └── acs-api.yml
 │
 ├── acspsuedo/
-│   ├── fips/                            # Federal Information Processing Standard (FIPS) Codes
-│   │   ├── counties/
-│   │   │   └── ...
-│   │   ├── places/
-│   │   │   └── ...
-│   │   ├── __init__.py
-│   │   ├── states.py
+│   ├── fips/                  # Federal Information Processing Standard (FIPS) Codes
 │   │   └── ...
 │   │
-│   ├── source/                          # Lower-level
+│   ├── source/
 │   │   └── ...
 │   │
 │   ├── __init__.py
-│   ├── api.py                           # Info on supported APIs
-│   ├── config.py
-│   ├── data.py                          # High-level objects to download/query ACS data
-│   └── geographies.py                   # TIGER Shapefiles for select geographic scopes
-│
-├── crawled_html/
-│   ├── TIGER_databases/
-│   │   └── ...
-│   └── Census_Map_Documentation.csv
+│   ├── datasets.py            # Info on supported datasets
+│   ├── geog.py
+│   └── query.py               # Main access to query ACS data
 │
 ├── notebooks/
 │   └── ...
@@ -108,10 +74,7 @@ acspsuedo/
 │   └── ...
 │
 ├── utils/
-│   ├── __init__.py
-│   ├── api_metadata.py
-│   ├── fips.py
-│   └── html_trees.py
+│   └── ...
 │
 ├── .gitattributes
 ├── .gitignore

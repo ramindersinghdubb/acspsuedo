@@ -4,13 +4,13 @@ FIPS codes for counties in the state/territory: New Hampshire.
 
 
 
-BELKNAP_COUNTY = '001'
-CARROLL_COUNTY = '003'
-CHESHIRE_COUNTY = '005'
-COOS_COUNTY = '007'
-GRAFTON_COUNTY = '009'
-HILLSBOROUGH_COUNTY = '011'
-MERRIMACK_COUNTY = '013'
-ROCKINGHAM_COUNTY = '015'
-STRAFFORD_COUNTY = '017'
-SULLIVAN_COUNTY = '019'
+Belknap_County = '001'
+Carroll_County = '003'
+Cheshire_County = '005'
+Coos_County = '007'
+Grafton_County = '009'
+Hillsborough_County = '011'
+Merrimack_County = '013'
+Rockingham_County = '015'
+Strafford_County = '017'
+Sullivan_County = '019'

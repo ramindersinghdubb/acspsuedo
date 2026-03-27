@@ -4,6 +4,6 @@ FIPS codes for counties in the state/territory: United States Virgin Islands.
 
 
 
-ST_CROIX_ISLAND = '010'
-ST_JOHN_ISLAND = '020'
-ST_THOMAS_ISLAND = '030'
+St_Croix_Island = '010'
+St_John_Island = '020'
+St_Thomas_Island = '030'

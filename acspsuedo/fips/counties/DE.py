@@ -4,6 +4,6 @@ FIPS codes for counties in the state/territory: Delaware.
 
 
 
-KENT_COUNTY = '001'
-NEW_CASTLE_COUNTY = '003'
-SUSSEX_COUNTY = '005'
+Kent_County = '001'
+New_Castle_County = '003'
+Sussex_County = '005'

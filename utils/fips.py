@@ -6,14 +6,15 @@ Executed once, but stored for posterity.
 
 from pathlib import Path
 from datetime import datetime
+import logging
+
 import pandas as pd
 
-from acspsuedo.source import (
+from acspsuedo.source.low.callables import (
     remove_accents,
     str_replacement
 )
 
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -24,7 +25,6 @@ logger_fmt = logging.Formatter(
 )
 console_handler.setFormatter(logger_fmt)
 logger.addHandler(console_handler)
-logger.setLevel('INFO')
 
 
 STR_REPL_DICT = {
@@ -37,36 +37,32 @@ STR_REPL_DICT = {
 
 def fips_folder_init() -> None:
     """Initialize the FIPS folder."""
-    FOLDER_PATH = 'fips'
+    FOLDER_PATH = 'acspsuedo/fips'
     if not Path(FOLDER_PATH).exists():
         Path(FOLDER_PATH).mkdir(parents = True, exist_ok = True)
     
-    FILE_PATH = 'fips/__init__.py'
+    FILE_PATH = 'acspsuedo/fips/__init__.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 FOLDER LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}                   
 
-Federal Information Processing Series (FIPS)
-codes for geographic scopes.
+Federal Information Processing Series (FIPS) codes for
+geographic scopes.
                    
-FIPS codes are used to format TIGER shapefiles
-and query American Community Survey (ACS) data
-with the Census Bureau's API.
-
+FIPS codes are used to format TIGER shapefiles and query
+American Community Survey datasets using the Census Bureau's
+API.
 """
 
-from acspsuedo.fips._zcta import ZCTA
-from acspsuedo.fips._place import PLACE
-from acspsuedo.fips._county import COUNTY
-from acspsuedo.fips.states import STATE_FIPS, STATE_FIPS_ABBREV
+from acspsuedo.fips._place import PLACE_BY_STATE
+from acspsuedo.fips._county import COUNTY_BY_STATE
+from acspsuedo.fips.states import STATE_FIPS, ABBREV_STATE_FIPS
 
 __all__ = [
-    "COUNTY",
-    "PLACE",
-    "ZCTA",
+    "COUNTY_BY_STATE",
+    "PLACE_BY_STATE",
     "STATE_FIPS",
-    "STATE_FIPS_ABBREV"
+    "ABBREV_STATE_FIPS"
 ]'''
     )
     logger.info('Successfully initialized the fips folder: ./fips/')
@@ -89,21 +85,15 @@ def states_fips() -> None:
     """Initialize the script containing state FIPS codes."""
     STATES_df = _states_df()
 
-    FILE_PATH = 'fips/states.py'
+    FILE_PATH = 'acspsuedo/fips/states.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}
 
 FIPS codes for states (and their abbreviations).
                    
 These FIPS codes are particularly useful for extracting
 TIGER shapefiles that require a state geographic ID.
-
-The URLs for these particular shapefiles are denoted
-in the `func.geographies.ShapeFileHandler()` class with
-the `state` string formatter.
-
 """\n\n\n\n'''
     )
         for _, row in STATES_df.iterrows():
@@ -112,60 +102,14 @@ the `state` string formatter.
 
         file.write(f"STATE_FIPS = {{\n")
         for _, row in STATES_df.iterrows():
-            file.write(f"    '{(row['STATE_NAME'].upper())}': '{row['STATEFP']}',\n")
+            file.write(f"    '{(row['STATE_NAME'].upper())}': {row['STATE_NAME'].upper().replace(' ', '_')},\n")
         file.write("}\n\n\n")
 
-        file.write(f"STATE_FIPS_ABBREV = {{\n")
+        file.write(f"ABBREV_STATE_FIPS = {{\n")
         for _, row in STATES_df.iterrows():
-            file.write(f"    '{row['STATE']}': '{row['STATEFP']}',\n")
+            file.write(f"    '{row['STATE']}': {row['STATE']},\n")
         file.write("}\n\n\n")
     logger.info('Successfully wrote the script containing state FIPS codes: %s', FILE_PATH)
-
-
-def zcta_by_state_fips() -> None:
-    """Initialize the script containing zipcode tabulation area FIPS codes."""
-    URL = 'https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt'
-    zcta_df = pd.read_csv(URL, sep='|', dtype = object)
-    zcta_df['STATEFP'] = [i[0:2] for i in zcta_df['GEOID_COUNTY_20']]
-    zcta_df['ZCTA']    = zcta_df['GEOID_ZCTA5_20']
-
-    states  = _states_df()
-    zcta_df = zcta_df.merge(states[['STATEFP', 'STATE']], copy=True)
-
-    ZCTA_df = zcta_df[['STATE', 'ZCTA']].dropna().sort_values(by = ['STATE', 'ZCTA'], ignore_index=True)
-    ZCTA_df = ZCTA_df.drop_duplicates(ignore_index = True)
-
-    FILE_PATH = 'fips/_zcta.py'
-    with open(FILE_PATH, 'w') as file:
-        file.write(f'''"""
-
-LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}
-
-FIPS codes for states corresponding to the zipcode
-tabulation areas (ZCTA) they contain.
-                   
-TIGER shapefiles for ZCTA geographic scopes require
-a state geographic ID.
-
-The URLs for these particular shapefiles are denoted
-in the `func.geographies.ShapeFileHandler()` class with
-the `state` string formatter.
-
-Note that some ZCTAs may not be entirely circumscribed
-by a state (e.g. ZCTAs may cross state lines).
-
-"""\n\n\n\n'''
-    )
-        file.write("ZCTA = {\n")
-        for STATE in sorted(ZCTA_df['STATE'].unique()):
-            mask = ZCTA_df['STATE'] == STATE
-            list_zcta = ZCTA_df['ZCTA'][mask]
-            file.write(f"    '{STATE}': [\n")
-            for zcta in list_zcta:
-                file.write(f"        '{zcta}',\n")
-            file.write(f"    ],\n")
-        file.write("}\n\n\n")
-    logger.info('Successfully wrote the script containing zipcode tabulation area FIPS codes: %s', FILE_PATH)
 
 
 def counties_places_df() -> pd.DataFrame:
@@ -206,10 +150,9 @@ def places_by_state_fips() -> None:
                 city_series[city_series == item] += ' ' + county_series[city_series == item]
         return city_series
 
-    FILE_PATH = 'fips/_place.py'
+    FILE_PATH = 'acspsuedo/fips/_place.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}
 
 FIPS codes for places, segmented by state.
@@ -217,16 +160,11 @@ FIPS codes for places, segmented by state.
 TIGER shapefiles for place geographic scopes require
 a state geographic ID.
 
-The URLs for these particular shapefiles are denoted
-in the `func.geographies.ShapeFileHandler()` class with
-the `state` string formatter.
-
 Note that some place names may be non-unique and thus have
 their respective county names appended.
-
 """\n\n\n\n'''
     )
-        file.write("PLACE = {\n")
+        file.write("PLACE_BY_STATE = {\n")
         state_abbvs = DF['STATE'].unique()
         for STATE in state_abbvs:
             state_df = DF[DF['STATE'] == STATE]
@@ -237,7 +175,7 @@ their respective county names appended.
 
             file.write(f"    '{STATE}': {{\n")
             for PLACE_NAME, PLACE_FIPS in zip(state_df['PLACENAME'], state_df['PLACEFP']):
-                file.write(f"""        "{remove_accents(PLACE_NAME).upper()}": '{PLACE_FIPS}',\n""")
+                file.write(f"""        "{remove_accents(PLACE_NAME).title()}": '{PLACE_FIPS}',\n""")
             
             file.write("    },\n")
         file.write("}")
@@ -246,10 +184,10 @@ their respective county names appended.
 
 def places_scripts_folder() -> None:
     """Initialize the module containing place variables segmented by state."""
-    from acspsuedo.fips._place import PLACE
+    from acspsuedo.fips._place import PLACE_BY_STATE
     DF = counties_places_df()
 
-    FOLDER_PATH = 'fips/places'
+    FOLDER_PATH = 'acspsuedo/fips/places'
 
     if not Path(FOLDER_PATH).exists():
         Path(FOLDER_PATH).mkdir(parents = True, exist_ok = True)
@@ -257,19 +195,17 @@ def places_scripts_folder() -> None:
     FILE_PATH = f'{FOLDER_PATH}/__init__.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 FOLDER LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}                   
 
 FIPS codes for places, segmented by state.
                    
 Note that some place names may be non-unique and thus have
 their respective county names appended.
-
 """''')
 
-    for state in PLACE.keys():
+    for state in PLACE_BY_STATE:
         STATE_NAME = DF['STATENAME'][DF['STATE'] == state].iloc[0]
-        PLACE_DICT = PLACE[state]
+        PLACE_DICT = PLACE_BY_STATE[state]
         FILE_PATH = f'{FOLDER_PATH}/{state}.py'
         with open(FILE_PATH, 'w') as file:
             file.write(f'''"""                 
@@ -279,7 +215,7 @@ Note that some place names may be non-unique and thus have
 their respective county names appended.
 """\n\n\n\n''')
             for variable, fips_code in PLACE_DICT.items():
-                file.write(f"""{variable} = '{fips_code}'\n""")
+                file.write(f"""{variable.title()} = '{fips_code}'\n""")
 
     logger.info('Successfully wrote the module containing place FIPS codes: %s', FOLDER_PATH)
             
@@ -291,33 +227,22 @@ def counties_by_state_fips():
     DF = DF[['STATEFP', 'STATE', 'STATENAME', 'COUNTYFP', 'COUNTYNAME']]
     DF = DF.drop_duplicates(ignore_index = True)
 
-    FILE_PATH = 'fips/_county.py'
+    FILE_PATH = 'acspsuedo/fips/_county.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}
 
 FIPS codes for counties, segmented by state.
-                   
-TIGER shapefiles for county geographic scopes do NOT
-require a state geographic ID since counties are
-collected under the more general 'us' geographic
-scope.
-
-These are retained here specifically for handling
-TIGER AREAWATER shapefiles, which are used to discard
-water areas from geometries.
-
 """\n\n\n\n'''
     )
-        file.write("COUNTY = {\n")
+        file.write("COUNTY_BY_STATE = {\n")
         state_abbvs = DF['STATE'].unique()
         for STATE in state_abbvs:
             state_df = DF[DF['STATE'] == STATE]
 
             file.write(f"    '{STATE}': {{\n")
             for COUNTY_NAME, COUNTY_FIPS in zip(state_df['COUNTYNAME'], state_df['COUNTYFP']):
-                cleaned_COUNTY_NAME = str_replacement(remove_accents(COUNTY_NAME).upper(), STR_REPL_DICT)
+                cleaned_COUNTY_NAME = str_replacement(remove_accents(COUNTY_NAME).title(), STR_REPL_DICT)
                 file.write(f"""        "{cleaned_COUNTY_NAME}": '{COUNTY_FIPS}',\n""")
             
             file.write("    },\n")
@@ -327,10 +252,10 @@ water areas from geometries.
 
 def counties_scripts_folder() -> None:
     """Initialize the module containing county variables segmented by state."""
-    from acspsuedo.fips._county import COUNTY
+    from acspsuedo.fips._county import COUNTY_BY_STATE
     DF = counties_places_df()
 
-    FOLDER_PATH = 'fips/counties'
+    FOLDER_PATH = 'acspsuedo/fips/counties'
 
     if not Path(FOLDER_PATH).exists():
         Path(FOLDER_PATH).mkdir(parents = True, exist_ok = True)
@@ -338,23 +263,21 @@ def counties_scripts_folder() -> None:
     FILE_PATH = f'{FOLDER_PATH}/__init__.py'
     with open(FILE_PATH, 'w') as file:
         file.write(f'''"""
-
 FOLDER LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}                   
 
 FIPS codes for counties, segmented by state.
-
 """''')
 
-    for state in COUNTY.keys():
+    for state in COUNTY_BY_STATE:
         STATE_NAME = DF['STATENAME'][DF['STATE'] == state].iloc[0]
-        COUNTY_DICT = COUNTY[state]
+        COUNTY_DICT = COUNTY_BY_STATE[state]
         FILE_PATH = f'{FOLDER_PATH}/{state}.py'
         with open(FILE_PATH, 'w') as file:
             file.write(f'''"""                 
 FIPS codes for counties in the state/territory: {STATE_NAME}.
 """\n\n\n\n''')
             for variable, fips_code in COUNTY_DICT.items():
-                file.write(f"""{variable} = '{fips_code}'\n""")
+                file.write(f"""{variable.title()} = '{fips_code}'\n""")
 
     logger.info('Successfully wrote the module containing county FIPS codes: %s', FOLDER_PATH)
 
@@ -364,12 +287,10 @@ def main() -> None:
     
     states_fips()
     
-    zcta_by_state_fips()
-    
     places_by_state_fips()
-    places_scripts_folder()
-    
     counties_by_state_fips()
+
+    places_scripts_folder()
     counties_scripts_folder()
 
 

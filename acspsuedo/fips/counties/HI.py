@@ -4,7 +4,7 @@ FIPS codes for counties in the state/territory: Hawaii.
 
 
 
-HAWAII_COUNTY = '001'
-HONOLULU_COUNTY = '003'
-KAUAI_COUNTY = '007'
-MAUI_COUNTY = '009'
+Hawaii_County = '001'
+Honolulu_County = '003'
+Kauai_County = '007'
+Maui_County = '009'

@@ -1,5 +1,5 @@
-name: Update API Metadata/HTML Spider Output
-run-name: Update API Metadata and crawl Census Bureau databases
+name: Update API Metadata
+run-name: Update API Metadata
 
 on:
 
@@ -75,8 +75,7 @@ jobs:
       #------------------------------
       - name: Run scripts
         run: |
-          poetry run python utils/api_metadata.py
-          poetry run python utils/html_trees.py
+          poetry run python utils/datasets.py
       
       - name: Commit files
         run: |
