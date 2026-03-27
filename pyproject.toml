@@ -1,7 +1,7 @@
 [project]
 name = "acspsuedo"
 version = "0.2.0"
-description = "Objects for handling the extraction of American Community Survey data on collections of geographies."
+description = "Objects for handling the extraction of American Community Survey data."
 authors = [
     {name = "Raminder Singh Dubb"}
 ]

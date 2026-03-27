@@ -7,6 +7,8 @@ Objects for handling the extraction of American Community Survey data.
 
 ## Installation
 
+From source:
+
 ```bash
 $ git clone https://github.com/ramindersinghdubb/acspsuedo
 $ cd acspsuedo
@@ -15,7 +17,7 @@ $ pip install .
 
 ## Usage
 
-See [notebooks](https://ramindersinghdubb.github.io/acspsuedo/tree/mainnotebooks/).
+See [notebooks](https://github.com/ramindersinghdubb/acspsuedo/tree/main/notebooks/).
 
 <br>
 
@@ -24,14 +26,14 @@ See [notebooks](https://ramindersinghdubb.github.io/acspsuedo/tree/mainnotebooks
 ```python
 from acspsuedo.query import download
 
-from acspsuedo.api import ACS5
+from acspsuedo.datasets import ACS5
 from acspsuedo.fips.states import CA
-from acspsuedo.fips.places.CA import LOS_ANGELES
 
 df = download(
-    dataset   = ACS5,
-    year      = 2024,
-    table = 'B25058',
+    dataset = ACS5,
+    year    = 2024,
+    table   = 'B25058',
+    # Geographic specifiers
     state = CA,
     tract = '*'
 )
@@ -41,11 +43,7 @@ df = download(
 
 <br>
 
-~~You can also specify whether or not to include optional geographic information from the [Census Bureau's TIGER Shapefile database](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) with the `include_geometries` argument.~~
-
-~~Note that TIGER shapefiles and/or the supplied API key are automatically cached in the current working directory (`./cache/`). Caching preferences may be disabled by updating the properties of the `CONFIG` object.~~
-
-**SHAPEFILE/GEOGRAPHIC HANDLING IS IN DEVELOPMENT.**
+**HANDLING FOR SHAPEFILE/GEOGRAPHIC INFORMATION IS IN DEVELOPMENT.**
 
 ## Repo Structure
 
@@ -56,16 +54,16 @@ acspsuedo/
 │       └── acs-api.yml
 │
 ├── acspsuedo/
-│   ├── fips/                  # Federal Information Processing Standard (FIPS) Codes
+│   ├── fips/                # Federal Information Processing Standard (FIPS) Codes
 │   │   └── ...
 │   │
 │   ├── source/
 │   │   └── ...
 │   │
 │   ├── __init__.py
-│   ├── datasets.py            # Info on supported datasets
+│   ├── datasets.py          # Info on supported datasets
 │   ├── geog.py
-│   └── query.py               # Main access to query ACS data
+│   └── query.py             # Main access to query ACS data
 │
 ├── notebooks/
 │   └── ...
