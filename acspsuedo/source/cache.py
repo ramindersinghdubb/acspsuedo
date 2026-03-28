@@ -2,8 +2,7 @@
 Cache handler for variable/table metadata.
 """
 import typing as t
-import itertools as it
-from collections import defaultdict
+from collections import defaultdict, ChainMap
 from logging import getLogger
 from warnings import warn
 
@@ -13,13 +12,18 @@ from acspsuedo.source.low.exceptions import APIException
 from acspsuedo.source.low.var_fetch import VariableFetchMixin
 
 
-
 logger = getLogger(__name__)
+
+
+class MetadataException(APIException):
+    """Custom exception class for metadata issues."""
+    pass
 
 
 class MetadataWarning(UserWarning):
     """Custom warning class for metadata issues."""
     pass
+
 
 
 class VariableCache:
@@ -89,7 +93,7 @@ class VariableCache:
         try:
             metadata = VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year][table]
         except:
-            metadata = self.fetch_table(dataset, year, table)
+            metadata = self._fetch_table(dataset, year, table)[table]
             logger.debug(
                 "Did not find table '%s' for the '%s' dataset during the %s calendar year in cache. "
                 "Fetched and cached for potential re-use later", table, dataset, year
@@ -116,8 +120,15 @@ class VariableCache:
         """
         try:
             metadata = VariableCache.__CACHE_VARIABLES_BY_DATASET_YEAR[dataset][year][variable]
-        except KeyError:
-            metadata = self._fetch_variable(dataset, year, variable)
+        except:
+            try:
+                # Load everything and see if it exists
+                metadata = self._fetch_variable(dataset, year, None)[variable]
+            except:
+                # Fall back to here
+                # This is usually in the case of users wishing to specify idiosyncratic annotation
+                # attribute data, since they aren't in the full collection of variables.
+                metadata = self._fetch_variable(dataset, year, variable)[variable]
             logger.debug(
                 "Did not find the '%s' variable for the '%s' dataset during the %s calendar year in cache. "
                 "Fetched and cached for potential re-use later", variable, dataset, year
@@ -125,26 +136,9 @@ class VariableCache:
 
         return metadata
     
-    def fetch_table(self, dataset: str, year: int, table: str, drop_annotation_vars: bool = True):
+    def _fetch_table(self, dataset: str, year: int, table: str):
         """
         Fetch a table from the dataset for the specified calendar year.
-
-        Parameters
-        ----------
-        dataset
-            The dataset of interest.
-
-        year
-            A calendar year of interest. Note that the dataset must be available
-            for this year.
-
-        table
-            A supported table within the dataset of interest.
-
-        drop_annotation_vars
-            Boolean. Default True.
-
-            Indicate whether or not to show accompanying annotation variables.
         """
         json_content = self._var_fetch._fetch_table_json_content(dataset, year, table)
 
@@ -156,22 +150,18 @@ class VariableCache:
                 MetadataWarning
             )
             return
-        
-        if drop_annotation_vars:
-            all_variables = {k: v for k, v in all_variables.items() if not k.endswith('A')}
 
         tbl = {table: all_variables}
         
         # We always want to cache
+        VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year][table] = all_variables
+
         for var_name, var_info in all_variables.items():
             VariableCache.__CACHE_VARIABLES_BY_DATASET_YEAR[dataset][year][var_name] = var_info
 
-        for tbl_name, tbl_info in tbl.items():
-            VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year][tbl_name] = tbl_info
-
         return tbl
     
-    def fetch_all_tables(self, dataset: str, year: int):
+    def _fetch_all_tables(self, dataset: str, year: int):
         """
         Fetch all tables from the dataset for the specified calendar year.
         
@@ -188,7 +178,7 @@ class VariableCache:
 
         # Fail-fast for empty datasets.
         all_grps = json_content.get("groups", None)
-        if not all_grps:
+        if all_grps is None:
             raise APIException(
                 f"Found no tables for the '{dataset}' during the calendar year {year}."
             )
@@ -200,9 +190,7 @@ class VariableCache:
         # we get all variables directly and sort by group accordingly.
         content = self._fetch_variable(dataset, year)
 
-        grps_dict: t.DefaultDict[
-            str, dict
-        ] = defaultdict(dict)
+        grps_dict = defaultdict(dict)
         for var_name, var_info in content.items():
             grp_name = var_info.get('group')
             if grp_name in grp_names:
@@ -210,7 +198,7 @@ class VariableCache:
 
         # We always want to cache
         for tbl_name, tbl_info in grps_dict.items():
-                VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year][tbl_name] = tbl_info
+            VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year][tbl_name] = tbl_info
         
         return grps_dict
 
@@ -227,16 +215,6 @@ class VariableCache:
             # Drop 'for', 'in', 'ucgid'
             metadata_dict = { k:v for k, v in all_variables.items()
                              if k not in ["for", "in", "ucgid"] }
-            
-            # MOE estimate metadata is not directly provided for the variables metadata
-            # (but IS available for table metadata; strange!), so we have to manually
-            # update accordingly.
-            metadata_dict = {
-                **metadata_dict,
-                **{k.removesuffix('E') + 'M':
-                   {**v, 'label': v.get('label').replace('Estimate', 'Margin of Error', 1)}
-                for k, v in metadata_dict.items() if k.endswith('E')}
-            }
 
         else:
             name = json_content.pop('name')
@@ -280,8 +258,6 @@ class VariableCache:
                 'VARIABLE_TYPE': var_info.get('predicateType', 'string'),
                 'TABLE': var_info.get('group'),
                 'TOPIC': var_info.get('concept', '').title(),
-                'RELATED_ATTRIBUTES': var_info.get('attributes'),
-                'LIMIT': var_info.get('limit'),
             }
             for var_name, var_info in sorted(json_content.items())
         ])
@@ -291,7 +267,7 @@ class VariableCache:
 
         return df
     
-    def tbl_metadata_df(self, dataset: str, year: int, table: str, drop_annotation_vars: bool = True):
+    def tbl_metadata_df(self, dataset: str, year: int, table: str):
         """
         Return a :py:class:`pandas.DataFrame` containing holistic metadata for
         all variables in a dataset table for a given year.
@@ -307,35 +283,26 @@ class VariableCache:
 
         table
             The table of interest. Note that the dataset must contain this table.
-
-        drop_annotation_vars
-            Boolean; default True.
-
-            Indicate whether or not to drop any accompanying annotation variables.
         """
-        tbl = self.fetch_table(dataset, year, table, drop_annotation_vars)
+        tbl_vars = self.get_table(dataset, year, table)
 
-        if tbl:
-            tbl_vars = tbl.get(table, None)
+        if tbl_vars:
+            for i in ['GEO_ID', 'NAME']:
+                tbl_vars.pop(i, None)
+            df = pd.DataFrame([
+                {
+                    'DATASET': dataset,
+                    'YEAR': year,
+                    'VARIABLE': var_name,
+                    'LABEL': var_info.get('label'),
+                    'VARIABLE_TYPE': var_info.get('predicateType', 'string'),
+                    'TABLE': var_info.get('group'),
+                    'TOPIC': var_info.get('concept', '').title(),
+                }
+                for var_name, var_info in sorted(tbl_vars.items())
+            ])
 
-            if tbl_vars:
-                for i in ['GEO_ID', 'NAME']:
-                    tbl_vars.pop(i, None)
-                df = pd.DataFrame([
-                    {
-                        'DATASET': dataset,
-                        'YEAR': year,
-                        'VARIABLE': var_name,
-                        'LABEL': var_info.get('label'),
-                        'VARIABLE_TYPE': var_info.get('predicateType', 'string'),
-                        'TABLE': var_info.get('group'),
-                        'TOPIC': var_info.get('concept', '').title(),
-                        'LIMIT': var_info.get('limit'),
-                    }
-                    for var_name, var_info in sorted(tbl_vars.items())
-                ])
-
-                return df
+            return df
         
         raise APIException(
             f"The '{table}' table was empty and/or non-existent for the '{dataset}' dataset "
@@ -343,12 +310,13 @@ class VariableCache:
         )
     
 
-    def _tbl_var_list(
+    def _vars_metadata(
         self,
         dataset: str,
         year: int,
         vars: t.Optional[t.Union[t.List[str], str]] = None,
         tbls: t.Optional[t.Union[t.List[str], str]] = None,
+        drop_annotation_vars: bool = True
     ) -> t.Tuple[t.List[t.Any], t.Dict[t.Any, t.Any]]:
         """
         Create a list of variables from the supplied variable(s) and table(s), as well as
@@ -371,49 +339,60 @@ class VariableCache:
         tbls
             One, none, or multiple tables. Default None.
 
+        drop_annotation_vars
+            Boolean; default True. Indicate whether or not to drop supplementary
+            attribute/annotation/margin-of-error variables.
+
         Returns
         -------
         A tuple containing:
         - All variables from the specification provided
         - Each of the variables corresponding data types.
         """
-        var_meta_df = self.var_metadata_df(dataset, year)
 
         if not isinstance(vars, list):
             vars = [vars]
         if not isinstance(tbls, list):
             tbls = [tbls]
 
-        
-        # Collect all variable information, from the specified
-        # variables and those found in the specified tables
-        tbl_vars = []
+        vars = [var for var in vars if var is not None]
+        tbls = [tbl for tbl in tbls if tbl is not None]
+
+        metadata = []
+
+        if vars:
+            for var in vars:
+                try:
+                    var_dict = self.get_variable(dataset, year, var)
+                    metadata.append({var: var_dict})
+                except APIException:
+                    raise MetadataException(
+                        f"The '{var}' variable was not recognized for the '{dataset}' dataset.",
+                    ) from None
         if tbls:
-            tbl_vars = list(
-                it.chain(
-                    *[list(var_meta_df['VARIABLE'][var_meta_df['TABLE'] == tbl]) for tbl in tbls]
-                )
-            )
-        vars.extend(tbl_vars)
+            for tbl in tbls:
+                try:
+                    tbl_dict = self.get_table(dataset, year, tbl)
+                    metadata.append(tbl_dict)
+                except APIException:
+                    raise MetadataException(
+                        f"The '{tbl}' table was not recognized for the '{dataset}' dataset.",
+                    ) from None
 
-        all_vars = [var for var in vars if var is not None]
-
-        # Check if any of the supplied vars do not exist or
-        # empty variables.
-        errors = [var for var in all_vars if var not in list(var_meta_df['VARIABLE'])]
-        if errors:
-            raise APIException(
-                f"Found at least one variable that was unrecognizable from the querying "
-                f"information supplied: {errors}."
-            )
-        if not all_vars:
+        # Parse out annotation and MOE variables, if indicated
+        metadata = dict(ChainMap(*metadata))
+        if drop_annotation_vars:
+            metadata = {k: v for k,v in metadata.items() if not
+                        any(x in v.get('label', '') for x in ['Annotation', 'Margin of Error'])}
+            
+        if not metadata:
             raise APIException(
                 "Non-existent variables; the specified tables and/or variables do not "
                 f"exist for the '{dataset}' dataset during the {year} calendar year."
             )
         
-        var_df = var_meta_df[var_meta_df['VARIABLE'].str.contains('|'.join(all_vars))]
-        meta_dict = dict(zip(var_df['VARIABLE'], var_df['VARIABLE_TYPE']))
+        meta_dict = {k: v.get('predicateType', '') for k, v in metadata.items()}
+        all_vars = list(meta_dict.keys())
 
         return all_vars, meta_dict
     
@@ -454,3 +433,12 @@ class VariableCache:
                 data_df[var] = data_df[var].astype(object)
 
         return data_df
+    
+
+    @classmethod
+    def _flush_var_metadata_cache(cls, dataset: str, year: int):
+        VariableCache.__CACHE_VARIABLES_BY_DATASET_YEAR[dataset][year].clear()
+
+    @classmethod
+    def _flush_tbl_metadata_cache(cls, dataset: str, year: int):
+        VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year].clear()

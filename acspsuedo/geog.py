@@ -194,7 +194,7 @@ class GeoSpecFmtter:
         Given a set of geographic specifiers, list the names of their respective
         geographic columns that will be returned from data queries.
         """
-        return [x for k in geog_specifiers for x in GEO_SPEC_METADATA[k][1]]
+        return list(dict.fromkeys([x for k in geog_specifiers for x in GEO_SPEC_METADATA[k][1]]))
     
     _repl: t.Callable[[str], str] = lambda x: x.replace('(', '') \
         .replace(')', '') \

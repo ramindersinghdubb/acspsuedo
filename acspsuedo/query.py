@@ -55,6 +55,7 @@ def download(
     *,
     variables: t.Optional[t.Union[t.List[str], str]] = None,
     tables: t.Optional[t.Union[t.List[str], str]] = None,
+    drop_annotation_variables: bool = True,
     convert_to_na: bool = True,
     include_geometries: bool = False,
     **geographic_specifiers
@@ -84,6 +85,10 @@ def download(
 
     tables
         A dataset table, or list of tables, which must be supported by the ACS dataset of interest.
+
+    drop_annotation_variables
+        The Bureau often attaches supplementary, non-required attribute and margin-of-error information
+        for estimate data. Indicate whether or not to drop this information. Default `True`.
         
     convert_to_na
         Indicate whether or not special values should be replaced with `np.nan` values. Default `True`.
@@ -130,7 +135,12 @@ def download(
     """
     
     urls, meta_d = _fmt_download_url(
-        dataset, year, vars = variables, tbls = tables, **geographic_specifiers
+        dataset = dataset,
+        year = year,
+        vars = variables,
+        tbls = tables,
+        drop_annotation_vars = drop_annotation_variables,
+        **geographic_specifiers
     )
     df = fetch_table(urls)
     df = _df_cleaner(df, year, meta_d, convert_to_na, **geographic_specifiers)
@@ -144,6 +154,7 @@ async def async_download(
     *,
     variables: t.Optional[t.Union[t.List[str], str]] = None,
     tables: t.Optional[t.Union[t.List[str], str]] = None,
+    drop_annotation_variables: bool = True,
     convert_to_na: bool = True,
     retry_rate: int = 30,
     timeout_rate: t.Union[float, int] = 0.1,
@@ -178,6 +189,10 @@ async def async_download(
 
     tables
         A dataset table, or list of tables, which must be supported by the ACS dataset of interest.
+
+    drop_annotation_variables
+        The Bureau often attaches supplementary, non-required attribute and margin-of-error information
+        for estimate data. Indicate whether or not to drop this information. Default `True`.
         
     convert_to_na
         Indicate whether or not special values should be replaced with `np.nan` values. Default `True`.
@@ -239,7 +254,12 @@ async def async_download(
     # Moreover, the execution unit is a concurrent model, since fetches are I/O bound,
     # so the issue of thread safety should absolutely be of no concen.
     urls, meta_d = _fmt_download_url(
-        dataset, year, vars = variables, tbls = tables, **geographic_specifiers
+        dataset = dataset,
+        year = year,
+        vars = variables,
+        tbls = tables,
+        drop_annotation_vars = drop_annotation_variables,
+        **geographic_specifiers
     )
     df = await batch_fetch_content(urls, retry_rate, timeout_rate)
     df = _df_cleaner(df, year, meta_d, convert_to_na, **geographic_specifiers)
@@ -271,9 +291,6 @@ def _df_cleaner(
         A set of geographic specifiers specifying the geographies on which queried data
         should be restricted to.
     """
-    # Drop annotation columns
-    anno_cols = [col for col in df.columns if col.endswith('A')]
-    df.drop(anno_cols, axis = 1, inplace = True)
 
     # Create a year column
     df['YEAR'] = year
@@ -283,9 +300,9 @@ def _df_cleaner(
 
     # Move identifier columns to the front
     geo_col_labs = GeoSpecFmtter.get_geo_cols(**geo_specifiers)
-    id_cols = [col for col in df.columns if col in
-               ['NAME', 'GEO_ID', 'UCGID', 'YEAR', *geo_col_labs]]
-    data_cols = [col for col in df.columns if col not in id_cols]
+    id_cols = [col for col in ['NAME', 'GEO_ID', 'UCGID', *geo_col_labs, 'YEAR']
+               if col in list(df.columns)]
+    data_cols = sorted([col for col in list(df.columns) if col not in id_cols])
     df = df[id_cols + data_cols]
 
     # Drop duplicate columns
@@ -295,7 +312,8 @@ def _df_cleaner(
     if 'GEO_ID' in df.columns:
         df.sort_values(by = 'GEO_ID', ignore_index=True, inplace=True)
     else:
-        id_cols.remove('NAME')
+        if 'NAME' in id_cols:
+            id_cols.remove('NAME')
         df.sort_values(by = id_cols, ignore_index=True, inplace=True)
 
     # Set column dtypes
@@ -315,29 +333,25 @@ def _fmt_download_url(
     year: int,
     vars: t.Optional[t.Union[t.List[str], str]] = None,
     tbls: t.Optional[t.Union[t.List[str], str]] = None,
+    drop_annotation_vars: bool = True,
     **geog_specifiers  
 ) -> t.Tuple[list[str], t.Dict[str, str]]:
     """
     Internal for formatting multiple download links to the Census Bureau
     (in the potential case that a user may query 50+ variables at once).
     """
-    url  = _fmt_url(dataset, year, **geog_specifiers)
-    vars, meta_dict = variable_cache._tbl_var_list(dataset, year, vars, tbls)
+    url = _fmt_url(dataset, year, **geog_specifiers)
+    vars, meta_dict = variable_cache._vars_metadata(dataset, year, vars, tbls, drop_annotation_vars)
 
-    for i in range(0, len(vars) + 1, 50):
-        vars.insert(i, 'NAME')
-
-    urls = [url.format(','.join(vars[i:i+50]) )
-            for i in range(0, len(vars) + 1, 50) ]
+    urls = [url.format(','.join(vars[i:i+50]) ) for i in range(0, len(vars) + 1, 50) ]
 
     return urls, meta_dict
 
 
-def _fmt_url(
-    dataset: str,
-    year: int,
-    **geog_specifiers
-):
+def _fmt_url(dataset: str, year: int, **geog_specifiers):
+    """
+    Formatter skeleton for the URLs.
+    """
     geo_specs = GeoSpecFmtter.get_fmt_path(dataset, year, **geog_specifiers)
     url_fmtter = 'https://api.census.gov/data/{year}/{dataset}?get={var}{geo_specs}{key}'
 

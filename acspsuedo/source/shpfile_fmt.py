@@ -279,7 +279,7 @@ GEO_SPEC_METADATA: t.Dict[
     ),
     'public_use_microdata_area': (
         '795',
-        ['STATE', 'PUBLIC_USE_MICRODATA_AREA'],
+        ['STATE', 'PUBLIC_USE_MICRODATA_AREA', 'SERIALNO', 'SPORDER'],
         'PUMA',
         None
     ),
