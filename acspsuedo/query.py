@@ -30,7 +30,7 @@ and/or view any information regarding variables/tables via the methods
 of this instance.
 """
 
-api_key_config = ApiKeyConfig()
+api_key_config: ApiKeyConfig = ApiKeyConfig()
 """
 Configuration settings for the API key.
 
