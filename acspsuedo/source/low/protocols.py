@@ -3,6 +3,7 @@ HTTPS GET methods/protocols.
 """
 import asyncio
 import typing as t
+from warnings import warn
 from logging import getLogger
 
 import aiohttp
@@ -50,11 +51,22 @@ async def batch_fetch_content(
     Asynchronous method to fetch data from the Census Bureau.
     """
     results = await _batch_fetch_content(urls, retry_rate, timeout_rate)
-    urls = [r.get('url', '') for r in results]
+    comp_urls = [r.get('url', '') for r in results]
     contents = [r.get('content', [[], []]) for r in results]
 
-    dfs = [_census_df_fmtter(url, content) for url, content in zip(urls, contents)]
+    dfs = [_census_df_fmtter(url, content) for url, content in zip(comp_urls, contents)]
     df = pd.concat(dfs, axis = 1)
+
+    if len(comp_urls) != len(urls):
+        failed_urls = [f"'{r.get('url', '')}', Status: {r.get('content', '')}"  for r in results
+                       if r.get('progress') != 'completed']
+        warn(
+            f"Some data will be omitted since queries for some URLs failed:\n" \
+            f"{'\n'.join(failed_urls)}",
+            UserWarning
+        )
+
+
     return df
 
 
