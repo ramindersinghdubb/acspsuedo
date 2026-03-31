@@ -134,8 +134,8 @@ class GeoSpecFmtter:
         else:
             msg = \
             f"\nCould not find any fully-specified paths corresponding to " \
-            f"{geographic_specifier} in the '{dataset}' dataset for the calendar\n" \
-            f"year {year}. This may be due to a combination of the following reasons:\n" \
+            f"{geographic_specifier} in the '{dataset}' dataset for the {year} calendar\n" \
+            f"year. This may be due to a combination of the following reasons:\n" \
             "   1. Potential misspelling in the geographic specifier(s)\n" \
             "   2. Unavailable and/or unsupported geographic specifier(s) for the dataset and calendar year."
 
@@ -394,7 +394,7 @@ class GeoSpecFmtter:
         else:
             raise GeoScopeException(
                 "Invalid/unsupported geographic specifiers were supplied for the "
-                f"'{dataset}' dataset for the calendar year {year}."
+                f"'{dataset}' dataset for the {year} calendar year."
             )
     
     @classmethod
@@ -459,7 +459,7 @@ class GeoSpecFmtter:
         raise GeoScopeException(
             "Could not infer a fully-specified path from the supplied geographic specifiers: "
             f"{list(kwargs)}. Potential fully-specified path matches for the '{dataset}' "
-            f"dataset during the calendar year {year} based on the supplied specifiers include "
+            f"dataset during the {year} calendar year based on the supplied specifiers include "
             f"one of: {p_opts}.{usd_msg}"
         )
 
@@ -514,8 +514,8 @@ class GeoSpecFmtter:
             # multi-year handling (TODO).
             raise UnsupportedSpecException(
                 f"The '{dataset}' API does not have supported geographic specifier handling "
-                f"for Federal Informating Process Standard (FIPS) codes during the calendar "
-                f"year {year}."
+                f"for Federal Informating Process Standard (FIPS) codes during the {year} "
+                f"calendar year."
             )
 
     @classmethod
@@ -611,7 +611,7 @@ def _dataset_meta_check(dataset: str, year: int) -> None:
         
         if year not in years:
             raise APIException(
-                f"Calendar year {year} was not supported for the '{dataset}' dataset. Supported "
+                f"The {year} calendar year was not supported for the '{dataset}' dataset. Supported "
                 f"calendar years for this dataset include one of the following: {years}"
             )
         
