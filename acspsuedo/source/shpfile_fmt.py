@@ -214,7 +214,7 @@ GEO_SPEC_METADATA: t.Dict[
         '314',
         ['METROPOLITAN_DIVISION'],
         'METDIV',
-        ['CBSAFP', 'METDIVFP'],
+        ['METDIVFP'],
         'us'
     ),
     'metropolitan_statistical_area_micropolitan_statistical_area_or_part': (
@@ -249,7 +249,7 @@ GEO_SPEC_METADATA: t.Dict[
         '350',
         ['NEW_ENGLAND_CITY_AND_TOWN_AREA'],
         'NECTA',
-        ['CNECTAFP', 'NECTAFP'],
+        ['NECTAFP'],
         'us'
     ),
     'combined_statistical_area_or_part': (
@@ -284,7 +284,7 @@ GEO_SPEC_METADATA: t.Dict[
         '355',
         ['NECTA_DIVISION'],
         'NECTADIV',
-        ['CNECTAFP', 'NECTAFP', 'NCTADVFP'],
+        ['NCTADVFP'],
         'us'
     ),
     'necta_division_or_part': (
@@ -305,7 +305,7 @@ GEO_SPEC_METADATA: t.Dict[
         '500',
         ['STATE', 'CONGRESSIONAL_DISTRICT'],
         'CD',
-        ['STATEFP', 'CDFP', 'GEOID'],
+        ['STATEFP', 'CDFP'],
         'us'
     ),
     'state_legislative_district_upper_chamber': (
@@ -324,7 +324,7 @@ GEO_SPEC_METADATA: t.Dict[
     ),
     'public_use_microdata_area': (
         '795',
-        ['STATE', 'PUBLIC_USE_MICRODATA_AREA', 'SERIALNO', 'SPORDER'],
+        ['STATE', 'PUBLIC_USE_MICRODATA_AREA'],
         'PUMA',
         ['STATEFP', 'PUMACE'],
         'state'
@@ -340,21 +340,21 @@ GEO_SPEC_METADATA: t.Dict[
         '950',
         ['STATE', 'SCHOOL_DISTRICT_ELEMENTARY'],
         'ELSD',
-        ['STATEFP', 'ELSDLEA', 'LOGRADE', 'HIGRADE'],
+        ['STATEFP', 'ELSDLEA'],
         'state'
     ),
     'school_district_secondary': (
         '960',
         ['STATE', 'SCHOOL_DISTRICT_SECONDARY'],
         'SCSD',
-        ['STATEFP', 'SCSDLEA', 'LOGRADE', 'HIGRADE'],
+        ['STATEFP', 'SCSDLEA'],
         'state'
     ),
     'school_district_unified': (
         '970',
         ['STATE', 'SCHOOL_DISTRICT_UNIFIED'],
         'UNSD',
-        ['STATEFP', 'UNSDLEA', 'LOGRADE', 'HIGRADE'],
+        ['STATEFP', 'UNSDLEA'],
         'state'
     )
 }

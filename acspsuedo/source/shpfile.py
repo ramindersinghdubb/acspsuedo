@@ -35,21 +35,30 @@ See also the addendum that follows in this module for extra information.
 
 
 import re
+import warnings
 import typing as t
 from pathlib import Path
-from warnings import warn
+from logging import getLogger
 
+import pandas as pd
 import geopandas as gpd
 import requests
 
 from acspsuedo.source.low.exceptions import APIException
 from acspsuedo.source.shpfile_fmt import GEO_SPEC_METADATA
-from acspsuedo.geog import GeoScopeException
 from acspsuedo.fips import STATE_FIPS
 
 
+logger = getLogger(__name__)
+
+
+
 class ShpfileException(APIException):
-    """Custom exception class for TIGER Shapefile-related errors."""
+    """Custom exception class for TIGER Shapefile extraction-related errors."""
+    pass
+
+class ShpfileFormatterException(APIException):
+    """Custom exception class for TIGER Shapefile formatting-related errors."""
     pass
 
 
@@ -139,16 +148,22 @@ class ShpFileHandler:
 
         # For special scopes, which require state identifiers
         if self._scope in ['BG', 'COUSUB', 'PLACE', 'TRACT', 'SLDL', 'SLDU', 'UNSD'] \
-            or self._scope.startswith( ('CD') ) \
+            or self._scope.startswith( ('CD', 'PUMA') ) \
             or self._outer == 'state':
             
             statefp = str(self._geographic_specifiers.get('state', ''))
+            if not statefp:
+                raise ShpfileFormatterException(
+                    f"Geometries at the '{self._for_scope}' scope take a 'state' outer-level "
+                    f"point of reference for extracting TIGER shapefile geometries at this "
+                    f"scope. Missing a state FIPS code."
+                )
             state = {v: k for k, v in STATE_FIPS.items()}.get(statefp, '')
             
             base_url += f'{statefp}_{state.replace(' ', '_')}/'
             path = f'tl_{self._year}_{statefp}_{self._scope.lower()}'
             
-            if not self._scope.startswith( ('CD', 'PUMA', 'UAC', 'ZCTA') ):
+            if not self._scope.startswith( ('CD', 'PUMA') ):
                 path += '00'
             
             path += '.zip'
@@ -186,7 +201,7 @@ class ShpFileHandler:
         if self._outer == 'state':
             outer = str(self._geographic_specifiers.get('state', ''))
             if not outer:
-                raise ShpfileException(
+                raise ShpfileFormatterException(
                     f"Geometries at the '{self._for_scope}' scope take a 'state' outer-level "
                     f"point of reference for extracting TIGER shapefile geometries at this "
                     f"scope. Missing a state FIPS code."
@@ -204,7 +219,7 @@ class ShpFileHandler:
             return self._tiger_url_fmtter_pre_2010_and_2010()
         else:
             return self._tiger_url_fmtter_post_2010()
-        
+
 
     def fetch_tiger_shpfile(self) -> t.Optional[gpd.GeoDataFrame]:
         """
@@ -227,9 +242,8 @@ class ShpFileHandler:
         """
 
         if (gdf := self._fetch_tiger_shpfile()) is None:
-            return
+                return
         
-        gdf = self._tiger_shpfile_fmtter(gdf)
         return gdf
 
         
@@ -243,6 +257,7 @@ class ShpFileHandler:
         try:
             content = _fetch_shpfile(f'{base_url}{path}')
             gdf = gpd.read_file(content)
+            gdf = self._tiger_shpfile_fmtter(gdf)
             return gdf
         except ShpfileException:
             msg = \
@@ -257,7 +272,7 @@ class ShpFileHandler:
             "      for data years 2008 and 2009.\n"\
             "See `acspsuedo.shpfile` for more information."\
 
-            warn(
+            warnings.warn(
                 msg,
                 ShpfileWarning
             )
@@ -277,16 +292,13 @@ class ShpFileHandler:
         if not isinstance(id_cols, list):
             id_cols = [id_cols]
 
-        id_cols = [col for col in [*id_cols, 'YEAR' ]if col in list(gdf.columns)]
+        id_cols = [col for col in [*id_cols, 'GEOID', 'YEAR'] if col in list(gdf.columns)]
 
         gdf_cols = [*id_cols, 'geometry']
         gdf = gdf[gdf_cols].copy()
 
         # Rename GEOID to cohere with the GEO_ID in the Census queried data
-        gdf.rename(
-            {'GEOID': 'GEO_ID'},
-            inplace = True
-        )
+        gdf.rename(columns = {'GEOID': 'GEO_ID'}, inplace = True)
 
         # Sort by
         if 'GEO_ID' in gdf.columns:
