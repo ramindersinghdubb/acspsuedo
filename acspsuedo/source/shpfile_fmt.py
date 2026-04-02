@@ -149,14 +149,14 @@ GEO_SPEC_METADATA: t.Dict[
     ),
     'tribal_census_tract': (
         '256',
-        ['TRIBAL_CENSUS_TRACT'],
+        ['AMERICAN_INDIAN_AREA_ALASKA_NATIVE_AREA_HAWAIIAN_HOME_LAND', 'TRIBAL_CENSUS_TRACT'],
         'TTRACT',
         ['AIANNHCE', 'TTRACTCE'],
         'us'
     ),
     'tribal_block_group': (
         '258',
-        ['TRIBAL_BLOCK_GROUP'],
+        ['AMERICAN_INDIAN_AREA_ALASKA_NATIVE_AREA_HAWAIIAN_HOME_LAND', 'TRIBAL_CENSUS_TRACT', 'TRIBAL_BLOCK_GROUP'],
         'TBG',
         ['AIANNHCE', 'TTRACTCE', 'TBLKGPCE'],
         'us'

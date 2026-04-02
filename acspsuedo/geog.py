@@ -87,7 +87,8 @@ class GeoSpecFmtter:
         using the instance's supplied keyword arguments and return the
         formatted geographic path.
         """
-        return GeoSpecFmtter.get_fmt_path(dataset, year, **self.geog_specifiers)
+        fmt_path, _ = GeoSpecFmtter.get_fmt_path(dataset, year, **self.geog_specifiers)
+        return fmt_path
     
     @classmethod
     def check_path_existence(
@@ -216,7 +217,7 @@ class GeoSpecFmtter:
         dataset: str,
         year: int,
         **kwargs
-    ) -> str:
+    ) -> t.Tuple[str, t.Dict[str, str]]:
         """
         Given a set of geographic specifiers, get the fully-specified
         geographic path for a dataset of interest on a supported year.
@@ -261,14 +262,14 @@ class GeoSpecFmtter:
         logger.debug('Inferred the following path -- %s', path)
         
         if path.len == 1:
-            return '&for={}:{}'.format(*path.spec, *path.kwargs.values())
+            return '&for={}:{}'.format(*path.spec, *path.kwargs.values()), path.kwargs
         else:
             *in_k, for_k = path.spec
             *in_v, for_v = path.kwargs.values()
             
             in_clause = ' '.join([f'{k}:{v}' for k, v in zip(in_k, in_v)])
             
-            return '&for={}:{}&in={}'.format(for_k, for_v, in_clause)
+            return '&for={}:{}&in={}'.format(for_k, for_v, in_clause), path.kwargs
 
     @classmethod
     def _infer_path(
