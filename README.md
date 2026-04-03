@@ -36,7 +36,7 @@ See [notebooks](https://github.com/ramindersinghdubb/acspsuedo/tree/main/noteboo
 
 <br>
 
-`acspsuedo` handles the extraction of ACS data. For example, if one were interested in the [B25058 "Median Contract Rents" dataset of the American Community Survey's 5-Year Estimates Detailed Tables API at the census tract level for California](https://api.census.gov/data/2024/acs/acs5?get=group(B25058)&for=tract:*&in=state:06), it would be as so.
+`acspsuedo` handles the extraction of ACS data. For example, if one were interested in the [B25058 "Median Contract Rents" table from the American Community Survey's 5-Year Estimates Detailed Tables dataset at the census tract level for California](https://api.census.gov/data/2023/acs/acs5?get=group(B25058)&for=tract:*&in=state:06), it would be as so.
 
 ```python
 import acspsuedo.query as apq
@@ -53,7 +53,7 @@ df = apq.download(
 )
 ```
 
-Likewise, `acspsuedo` enriches data queries by providing geospatial information taken from the Census Bureau's TIGER Shapefile database. Thus, this interface grants users the ability to conduct geospatial analysis/visualization.
+Likewise, `acspsuedo` enriches data queries by providing geospatial information taken from the Census Bureau's TIGER Shapefile database. As a result, users can conduct geospatial analysis/visualization.
 
 ```python
 gdf = apq.download(
@@ -79,7 +79,7 @@ Note that an API key is recommended for querying multiple (50+) datasets in a se
 acspsuedo/
 ├── .github/
 │   └── workflows/
-│       └── acs-api.yml
+│       └── acs-api.yml      # CI/CD to ensure upkeep with API releases
 │
 ├── acspsuedo/
 │   ├── fips/                # Federal Information Processing Standard (FIPS) Codes
