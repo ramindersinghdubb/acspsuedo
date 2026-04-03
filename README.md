@@ -15,9 +15,24 @@ $ cd acspsuedo
 $ pip install .
 ```
 
+## Purposes
+
+`acspsuedo` seeks to make data queries and extraction as seemless as possible with a user-friendly interface designed to support a host of purposes, such as:
+- Running data queries to the Bureau, with support for concurrent application for users interested in ETL/ELT processes
+
+- Querying metadata on particular variable and/or table information offered by any one of the ACS datasets (cf. `acspsuedo.datasets`)
+
+- Querying metadata on the types of geographic scopes at which ACS demographic data may be available at (such as at the state-level, the county-level, and so forth)
+
+- Enabling users with Census Bureau API keys to run multiple data queries in a session
+
+- Continuous monitoring of the Census Bureau API, in order to ensure the most up-to-date information on all ACS datasets
+
+- Caching the Bureau's Topologically Integerated Geographic Encoding and Referencing (TIGER) shapefiles, which are designed to provide geographic representations to support maps and/or geographic analysis
+
 ## Usage
 
-See [notebooks](https://github.com/ramindersinghdubb/acspsuedo/tree/main/notebooks/).
+See [notebooks](https://github.com/ramindersinghdubb/acspsuedo/tree/main/notebooks/) for a demonstration of the module's utilities/interface.
 
 <br>
 
@@ -30,7 +45,7 @@ from acspsuedo.fips.states import CA
 
 df = apq.download(
     dataset = ACS5,
-    year    = 2024,
+    year    = 2023,
     table   = 'B25058',
     # Geographic specifiers
     state = CA,
@@ -38,7 +53,25 @@ df = apq.download(
 )
 ```
 
-*Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html).*
+Likewise, `acspsuedo` enriches data queries by providing geospatial information taken from the Census Bureau's TIGER Shapefile database. Thus, this interface grants users the ability to conduct geospatial analysis/visualization.
+
+```python
+gdf = apq.download(
+    dataset = ACS5,
+    year    = 2023,
+    table   = 'B25058',
+    include_geometries = True,
+    # Geographic specifiers
+    state = CA,
+    tract = '*'
+)
+```
+
+An example of some geospatial visualization with the data generated from the query above. You can click on the image to see the notebook that generated it.
+
+[<img src="./notebooks/images/CaliRentalMarkets.png" alt="California Rental Market, 2023" height=600>](./notebooks/Querying_Data_ACS5_2023.ipynb)
+
+Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html). We have implemented a interface via* `acspsuedo.query.api_key_config` in which users can set their API keys. See the [`notebooks/API_Key`](https://github.com/ramindersinghdubb/acspsuedo/blob/main/notebooks/API_Key.ipynb) notebook.
 
 ## Repo Structure
 
@@ -57,8 +90,7 @@ acspsuedo/
 │   │
 │   ├── __init__.py
 │   ├── datasets.py          # Info on supported datasets
-│   ├── geog.py
-│   └── query.py             # Main access to query ACS data
+│   └── query.py             # Main interface
 │
 ├── notebooks/
 │   └── ...

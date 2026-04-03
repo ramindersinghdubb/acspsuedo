@@ -14,7 +14,7 @@ import geopandas as gpd
 import numpy as np
 
 from acspsuedo.fips import STATE_FIPS
-from acspsuedo.geog import GeoSpecFmtter, ApiKeyConfig
+from acspsuedo.source.geog import GeoSpecFmtter, ApiKeyConfig
 from acspsuedo.source.shpfile import ShpfileFormatterException
 from acspsuedo.source.shpfile_fmt import GEO_SPEC_METADATA
 from acspsuedo.source.cache import VariableCache
