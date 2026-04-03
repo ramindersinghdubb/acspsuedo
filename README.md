@@ -71,7 +71,7 @@ An example of some geospatial visualization with the data generated from the que
 
 [<img src="./notebooks/images/CaliRentalMarkets.png" alt="California Rental Market, 2023" height=600>](./notebooks/Querying_Data_ACS5_2023.ipynb)
 
-Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html). We have implemented a interface via* `acspsuedo.query.api_key_config` in which users can set their API keys. See the [`notebooks/API_Key`](https://github.com/ramindersinghdubb/acspsuedo/blob/main/notebooks/API_Key.ipynb) notebook.
+Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html). We have implemented a interface via `acspsuedo.query.api_key_config` in which users can set their API keys. See the [`notebooks/API_Key`](https://github.com/ramindersinghdubb/acspsuedo/blob/main/notebooks/API_Key.ipynb) notebook.
 
 ## Repo Structure
 
