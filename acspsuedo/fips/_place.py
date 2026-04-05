@@ -1,5 +1,5 @@
 """
-LAST UPDATED: March 20, 2026
+LAST UPDATED: April 05, 2026
 
 FIPS codes for places, segmented by state.
                    
@@ -5131,7 +5131,7 @@ PLACE_BY_STATE = {
         "Big_Pine_Key": '06425',
         "Cudjoe_Key": '15862',
         "Duck_Key": '18425',
-        "Islamorada,_Village_Of_Islands": '34132',
+        "Islamorada_Village_Of_Islands": '34132',
         "Key_Colony_Beach": '36325',
         "Key_Largo": '36375',
         "Key_West": '36550',
@@ -27513,7 +27513,7 @@ PLACE_BY_STATE = {
         "Tellico_Plains": '73260',
         "Vonore_Monroe_County": '77480',
         "Clarksville": '15160',
-        "Lynchburg,_Moore_County_Metropolitan_Government": '44382',
+        "Lynchburg_Moore_County_Metropolitan_Government": '44382',
         "Coalfield": '15880',
         "Harriman_Morgan_County": '32520',
         "Oakdale": '54280',

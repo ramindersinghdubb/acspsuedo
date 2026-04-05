@@ -1,5 +1,5 @@
 """                 
-FIPS codes for counties in the state/territory: United States Virgin Islands.
+FIPS codes for counties in the state/territory: Virgin Islands of the United States.
 """
 
 

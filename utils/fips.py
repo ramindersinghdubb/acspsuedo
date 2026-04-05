@@ -28,7 +28,7 @@ logger.addHandler(console_handler)
 
 
 STR_REPL_DICT = {
-    **{k: ''  for k in [".", "'", "?", "(", ")"]},
+    **{k: ''  for k in [".", "'", "?", "(", ")", ","]},
     **{k: '_' for k in ['-', "/", ' ']}
 }
 
@@ -68,6 +68,33 @@ __all__ = [
     logger.info('Successfully initialized the fips folder: ./fips/')
 
 
+def aiannh_fips() -> None:
+    """
+    American Indian/Alaska Native/Native Hawaiian Area (AIANNH) FIPS codes.
+    """
+    URL = 'https://www2.census.gov/geo/docs/reference/codes2020/national_aiannh2020.txt'
+    AIANNH_df = pd.read_csv(
+        URL,
+        sep = '|',
+        dtype = object
+    )[['AIANNHNAME', 'AIANNHCE']]
+
+    FILE_PATH = 'acspsuedo/fips/aiannh.py'
+    with open(FILE_PATH, 'w') as file:
+        file.write(f'''"""
+LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}
+
+FIPS codes for American Indian/Alaska Native/Native Hawaiian
+Area (AIANNH) geographies.
+"""\n\n\n\n'''
+    )
+        for AIANNH_NAME, AIANNH_FIPS in zip(AIANNH_df['AIANNHNAME'], AIANNH_df['AIANNHCE']):
+            cleaned_AIANNH_NAME = str_replacement(remove_accents(AIANNH_NAME).title(), STR_REPL_DICT)
+            file.write(f"""{cleaned_AIANNH_NAME} = '{AIANNH_FIPS}'\n""")
+
+    logger.info('Successfully wrote the script containing AIANNH FIPS codes: %s', FILE_PATH)
+
+
 def _states_df() -> pd.DataFrame:
     """Fetch the data for state FIPS codes."""
     URL = 'https://www2.census.gov/geo/docs/reference/codes2020/national_state2020.txt'
@@ -78,6 +105,8 @@ def _states_df() -> pd.DataFrame:
     )[['STATE', 'STATE_NAME', 'STATEFP']]
 
     STATES_df['STATE_NAME'] = STATES_df['STATE_NAME'].str.replace('.', '')
+    STATES_df.loc[STATES_df['STATE'] == 'VI', 'STATE_NAME'] = 'Virgin Islands of the United States'
+    
     return STATES_df
 
 
@@ -183,7 +212,7 @@ their respective county names appended.
 
 
 def places_scripts_folder() -> None:
-    """Initialize the module containing place variables segmented by state."""
+    """Initialize the library containing place variables segmented by state."""
     from acspsuedo.fips._place import PLACE_BY_STATE
     DF = counties_places_df()
 
@@ -206,7 +235,7 @@ their respective county names appended.
     for state in PLACE_BY_STATE:
         STATE_NAME = DF['STATENAME'][DF['STATE'] == state].iloc[0]
         PLACE_DICT = PLACE_BY_STATE[state]
-        FILE_PATH = f'{FOLDER_PATH}/{state}.py'
+        FILE_PATH = f'{FOLDER_PATH}/{STATE_NAME.lower().replace(' ', '_')}.py'
         with open(FILE_PATH, 'w') as file:
             file.write(f'''"""                 
 FIPS codes for places in the state/territory: {STATE_NAME}.
@@ -217,7 +246,7 @@ their respective county names appended.
             for variable, fips_code in PLACE_DICT.items():
                 file.write(f"""{variable.title()} = '{fips_code}'\n""")
 
-    logger.info('Successfully wrote the module containing place FIPS codes: %s', FOLDER_PATH)
+    logger.info('Successfully wrote the library containing place FIPS codes: %s', FOLDER_PATH)
             
 
 
@@ -251,7 +280,7 @@ FIPS codes for counties, segmented by state.
 
 
 def counties_scripts_folder() -> None:
-    """Initialize the module containing county variables segmented by state."""
+    """Initialize the library containing county variables segmented by state."""
     from acspsuedo.fips._county import COUNTY_BY_STATE
     DF = counties_places_df()
 
@@ -271,7 +300,7 @@ FIPS codes for counties, segmented by state.
     for state in COUNTY_BY_STATE:
         STATE_NAME = DF['STATENAME'][DF['STATE'] == state].iloc[0]
         COUNTY_DICT = COUNTY_BY_STATE[state]
-        FILE_PATH = f'{FOLDER_PATH}/{state}.py'
+        FILE_PATH = f'{FOLDER_PATH}/{STATE_NAME.lower().replace(' ', '_')}.py'
         with open(FILE_PATH, 'w') as file:
             file.write(f'''"""                 
 FIPS codes for counties in the state/territory: {STATE_NAME}.
@@ -279,7 +308,57 @@ FIPS codes for counties in the state/territory: {STATE_NAME}.
             for variable, fips_code in COUNTY_DICT.items():
                 file.write(f"""{variable.title()} = '{fips_code}'\n""")
 
-    logger.info('Successfully wrote the module containing county FIPS codes: %s', FOLDER_PATH)
+    logger.info('Successfully wrote the library containing county FIPS codes: %s', FOLDER_PATH)
+
+
+def _cousub_df() -> pd.DataFrame:
+    STATE_df = _states_df()
+
+    URL = 'https://www2.census.gov/geo/docs/reference/codes2020/national_cousub2020.txt'
+    COUSUB_df = pd.read_csv(
+        URL,
+        sep = '|',
+        dtype = object
+    )[['STATE', 'STATEFP', 'COUSUBNAME', 'COUSUBFP']]
+
+    merged_df = STATE_df.merge(COUSUB_df, on = ['STATE', 'STATEFP'])
+
+    return merged_df
+
+
+def cousub_scripts_folder() -> None:
+    """Initialize the library containing county subdivisions segmented by state."""
+    
+    FOLDER_PATH = 'acspsuedo/fips/cousub'
+
+    if not Path(FOLDER_PATH).exists():
+        Path(FOLDER_PATH).mkdir(parents = True, exist_ok = True)
+
+    FILE_PATH = f'{FOLDER_PATH}/__init__.py'
+    with open(FILE_PATH, 'w') as file:
+        file.write(f'''"""
+FOLDER LAST UPDATED: {datetime.now().strftime('%B %d, %Y')}                   
+
+FIPS codes for county subdivisions, segmented by state.
+"""''')
+        
+    DF = _cousub_df()
+
+    for state in DF['STATE'].unique():
+        STATE_NAME = DF['STATE_NAME'][DF['STATE'] == state].iloc[0]
+
+        STATE_df = DF[DF['STATE_NAME'] == STATE_NAME][['COUSUBNAME', 'COUSUBFP']] \
+            .sort_values(by = 'COUSUBFP') \
+            .drop_duplicates()
+        FILE_PATH  = f'{FOLDER_PATH}/{STATE_NAME.lower().replace(' ', '_')}.py'
+        with open(FILE_PATH, 'w') as file:
+            file.write(f'''"""                 
+FIPS codes for county subdivisions in the state/territory: {STATE_NAME}.
+"""\n\n\n\n''')
+            for cousub_name, cousub_fips in zip(STATE_df['COUSUBNAME'], STATE_df['COUSUBFP']):
+                file.write(f"""{str_replacement(cousub_name, STR_REPL_DICT)} = '{cousub_fips}'\n""")
+
+    logger.info('Successfully wrote the library containing county FIPS codes: %s', FOLDER_PATH)
 
 
 def main() -> None:    
@@ -290,8 +369,10 @@ def main() -> None:
     places_by_state_fips()
     counties_by_state_fips()
 
+    aiannh_fips()
     places_scripts_folder()
     counties_scripts_folder()
+    cousub_scripts_folder()
 
 
 if __name__ == '__main__':

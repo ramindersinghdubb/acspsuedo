@@ -1,5 +1,5 @@
 """                 
-FIPS codes for places in the state/territory: United States Virgin Islands.
+FIPS codes for places in the state/territory: Virgin Islands of the United States.
                 
 Note that some place names may be non-unique and thus have
 their respective county names appended.

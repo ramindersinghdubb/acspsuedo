@@ -1,6 +1,6 @@
 [project]
 name = "acspsuedo"
-version = "0.2.1"
+version = "0.2.2"
 description = "Objects for handling the extraction of American Community Survey data."
 authors = [
     {name = "Raminder Singh Dubb"}

@@ -1,7 +1,7 @@
 import acspsuedo.query as apq
 
 from acspsuedo.datasets import ACS5
-from acspsuedo.fips.counties.CA import Los_Angeles_County
+from acspsuedo.fips.counties.california import Los_Angeles_County
 from acspsuedo.fips.states import CA
 
 import pandas as pd
