@@ -542,3 +542,252 @@ def _get_shpfile(
 
         gdf = pd.concat(gdfs, ignore_index = True)
         return gdf
+    
+
+
+def confined_download(area_threshold: t.Union[int, float] = 0.7, **geographic_specifiers):
+    """
+    Download data from the United States Census Bureau's American Community Survey's (ACS) for
+    geographies of interest that are confined to the outer-layer of geographies specified here.
+
+    Parameters
+    ----------
+    area_threshold
+        What percentage of the inner-layer set of geographies' areas must be within the outer-layer
+        geography area. Default 0.7.
+
+    geographic_specifiers
+        A set of geographic specifiers specifying the geographies on which queried data, for the
+        inner-layer set of geographies, should be confined within.
+
+        To view available fully-specified geographic paths for an ACS dataset, reference the
+        `~view_geographic_paths()` function. If you know your geographic specifier(s), reference
+        the `~check_path_existence()` function to see whether or not they are supported for an ACS
+        dataset of interest and, if they are supported, all geographic paths containing those
+        specifiers of interest.
+
+    Returns
+    -------
+    A :py:class:`acspsuedo.query._ConfinedDownload` instance.
+
+    *Note*: This class supports a (synchronous) download method, whose parameter space is the same
+    as that of the normal `acspsuedo.query.download()` function.
+    """
+    if (0 > area_threshold) or (area_threshold > 1):
+        raise ValueError("Valid area threshold values must be between 0 and 1.")
+    return _ConfinedDownload(area_threshold, **geographic_specifiers)
+
+
+
+class _ConfinedDownload:
+    """
+    Handler for downloading ACS data at geographic specifiers that are
+    confined to a different scope than readily permissible.
+    """
+    def __init__(self, area_threshold: t.Union[int, float], **geograhic_specifiers) -> None:
+        self._area_threshold        = area_threshold
+        self._geographic_specifiers = geograhic_specifiers
+
+    @property
+    def area_threshold(self):
+        """
+        The percentage of the inner-layer of geographies' areas that must be within the
+        outer-layer geography area.
+        """
+        return self._area_threshold
+    
+    @property
+    def geographic_specifiers(self):
+        """
+        The geographic specifiers indicating the outer-layer geography area to which
+        inner-level geographies from queried data will be confined to.
+        """
+        return self._geographic_specifiers
+    
+    def __repr__(self) -> str:
+        return "_ConfinedDownload(area_threshold = {}, {})".format(
+            self._area_threshold,
+            ', '.join([f"{k} = {v}" for k, v in self._geographic_specifiers.items()])
+        )
+    
+    def __eq__(self, other) -> bool:
+        if isinstance(other, _ConfinedDownload):
+            return (self._area_threshold == other._area_threshold) and \
+                (self._geographic_specifiers == other.geographic_specifiers)
+        return False
+    
+    def download(
+        self,
+        dataset: str,
+        year: int,
+        *,
+        variables: t.Optional[t.Union[t.List[str], str]] = None,
+        tables: t.Optional[t.Union[t.List[str], str]] = None,
+        drop_annotation_variables: bool = True,
+        convert_to_na: bool = True,
+        include_geometries: bool = False,
+        with_geometry_id_columns: bool = False,
+        **geographic_specifiers
+    ) -> t.Union[pd.DataFrame, gpd.GeoDataFrame]:
+        """
+        Download data from the United States Census Bureau's American Community Survey's (ACS) for
+        geographies of interest that are confined to the outer-layer of geographies specified from
+        this function.
+
+        Note that you can specify particular variables, tables, or some combination of the two.
+
+        Parameters
+        ----------
+        dataset
+            A supported ACS dataset.
+            
+            To view the list of supported datasets, as well as their respectively available
+            years, see `acspsuedo.datasets`.
+
+        year
+            A calendar year for the ACS dataset.
+
+            Note that this calendar year must be available for the specified ACS dataset
+            of interest.
+
+        variables
+            A variable, or list of variables, to be queried from the ACS dataset.
+
+        tables
+            A dataset table, or list of tables, which must be supported by the ACS dataset of interest.
+
+        drop_annotation_variables
+            The Bureau often attaches supplementary, non-required attribute and margin-of-error information
+            for estimate data. Indicate whether or not to drop this information. Default `True`.
+            
+        convert_to_na
+            Indicate whether or not special values should be replaced with `np.nan` values. Default `True`.
+
+        include_geometries
+            Indicate whether or not to incorporate geometric information from the Census Bureau's TIGER
+            Shapefile database. Useful for geographical analysis and/or map visualization. Default `False`.
+
+            Note: Due to the changes in naming conventions for TIGER shapefiles over the years or the
+            non-existence of corresponding geometric information for certain scopes, this may not always
+            return geometries. In which case, the return type would be a(n) :py:class:`pandas.DataFrame`
+            instance containing the queried data and not the anticipated :py:class:`geopandas.GeoDataFrame`
+            containing the former in addition to the respective geometric information.
+
+        with_geometry_id_columns
+            If `include_geometries` is True, indicate whether or not to append the geometric information
+            with their respective identifier columns. Default `False`.
+
+            Note: These columns have been made to cohere with those identifier variables/columns requested
+            from the data query and thus are deemed redundant. Nevertheless, if you wish to specify this
+            additional identifier information, you can set this setting to `True`.
+
+        geographic_specifiers
+            The set of inner-layer geographic specifiers indicating the geographies to which queried data
+            references. Queried data at this inner-layer, in turn, will be confined to the outer-layer
+            geography.
+
+            To view available fully-specified geographic paths for an ACS dataset, reference the
+            `~view_geographic_paths()` function. If you know your geographic specifier(s), reference
+            the `~check_path_existence()` function to see whether or not they are supported for an ACS
+            dataset of interest and, if they are supported, all geographic paths containing those
+            specifiers of interest.
+
+        Returns
+        -------
+        A :py:class:`pandas.DataFrame` containing the queried American Community Survey data of interest.
+
+        If `add_geometries` is `'True'`, and TIGER shapefile data exists for the queried data, the return
+        is a :py:class:`geopandas.GeoDataFrame` containing geometric shapefile information.
+
+        Notes
+        -----
+        An empty :py:class:`pandas.DataFrame` (or :py:class:`geopandas.GeoDataFrame`, if `add_geometries`
+        is `'True'`) may be returned. This corresponds to a scenario in which there are no inner-layer
+        geographies so much as touching the border of the outer-layer geography.
+
+        For multiple queries (500+) in a session, it is recommended to obtain an API key. API keys are
+        free to obtain at https://api.census.gov/data/key_signup.html. If you wish to specify an API key,
+        set the key in your operating system's environment, e.g.,
+        ```
+        import os
+        os.environ['CENSUS_BUREAU_API_KEY'] = your_api_key_here
+        ```
+        or write it to a textfile in the working directory (`./api_key.txt`). If both are supplied, the
+        OS environment key is prioritized.
+        
+        The configuration for the locations of these settings can be customized.
+        ```
+        from acspsuedo.query import api_key_config
+        api_key_config.FILE_PATH = 'location/to/new_file_path.txt' # <- Set a custom filepath containing the key
+        api_key_config.OS_ENV_LOCATION = 'new_env_key' # <- Set a custom environment location to the key
+        ```
+        """
+        inner_data = download(
+            dataset = dataset,
+            year = year,
+            variables = variables,
+            tables = tables,
+            drop_annotation_variables = drop_annotation_variables,
+            convert_to_na = convert_to_na,
+            with_geometry_id_columns = with_geometry_id_columns,
+            include_geometries = True,
+            **geographic_specifiers
+        )
+        inner_crs = inner_data.crs # <- Keep the original Coordinate Referencing System
+
+        outer_data = download(
+            dataset = dataset,
+            year = year,
+            variables = variables,
+            tables = tables,
+            drop_annotation_variables = drop_annotation_variables,
+            convert_to_na = convert_to_na,
+            with_geometry_id_columns = with_geometry_id_columns,
+            include_geometries = True,
+            **self._geographic_specifiers
+        )
+
+        # Project to Web-Mercator
+        inner_data.to_crs(3857, inplace=True)
+        outer_data.to_crs(3857, inplace=True)
+
+        # Rename columns
+        inner_data.columns = [col.__add__('_inner') if col != 'geometry' else 'geometry' for col in inner_data.columns]
+        outer_data.columns = [col.__add__('_outer') if col != 'geometry' else 'geometry' for col in outer_data.columns]
+
+        # Keep the geometries
+        inner_data['inner_geometry'] = inner_data.geometry
+        outer_data['outer_geometry'] = outer_data.geometry
+
+        # Confining
+        confined_data = inner_data.sjoin(
+            outer_data,
+            how = 'inner',
+            predicate = 'intersects',
+            lsuffix = 'inner',
+            rsuffix = 'outer'
+        )
+
+        # Keep the inner data (i.e. the smaller of the two)
+        drop_cols = [col for col in confined_data.columns if col.endswith('_outer')]
+        confined_data.drop(columns = drop_cols, inplace = True)
+
+        # Thresholding
+        thresholded_data = confined_data[
+            confined_data['inner_geometry'].intersection(confined_data['outer_geometry']).area >=
+            0.8 * confined_data['inner_geometry'].area
+        ]
+
+        # Clean column labels (to ensure consistency w/o confinement) and reset index
+        thresholded_data.drop(columns = ['inner_geometry', 'outer_geometry'], inplace = True)
+        thresholded_data.columns = [col.rstrip('_inner') for col in thresholded_data.columns]
+        thresholded_data.reset_index(drop = True, inplace=True)
+
+        # Restore to the original/inner CRS
+        thresholded_data.to_crs(inner_crs, inplace=True)
+
+        # Drop the geometry column (if indicated False)
+        if not include_geometries:
+            thresholded_data.drop(columns = ['geometry'], inplace = True)
+
+        return thresholded_data
