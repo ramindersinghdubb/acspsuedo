@@ -534,7 +534,7 @@ def _zipcode_tabulation_area_rule(year: int):
     zcta = f'ZCTA5{str(year)[2]}0'
     folder = f'ZCTA5{str(year)[2]}0'
 
-    if 2010 <= year <= 2019:
+    if (2010 <= year <= 2019) or (year == 2000):
         folder = 'ZCTA5'
 
     return zcta, folder
