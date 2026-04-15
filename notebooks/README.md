@@ -17,4 +17,4 @@ These notebooks are provided as user demonstration for navigating the module's u
 
 Click on an image to see the respective notebook that generated it.
 
-[<img src="./images/CaliRentalMarkets.png" alt="California Rental Market, 2023" height=500>](./notebooks/Querying_Data_ACS5_2023.ipynb) [<img src="./images/LongBeachMedianIncome.png" alt="Long Beach Median Income, 2024" height=500>](./notebooks/Confined_Downloads.ipynb)
+[<img src="./images/CaliRentalMarkets.png" alt="California Rental Market, 2023" height=500>](./Querying_Data_ACS5_2023.ipynb) [<img src="./images/LongBeachMedianIncome.png" alt="Long Beach Median Income, 2024" height=500>](./Confined_Downloads.ipynb)
