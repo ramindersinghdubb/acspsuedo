@@ -138,7 +138,8 @@ class GeoSpecFmtter:
             f"{geographic_specifier} in the '{dataset}' dataset for the {year} calendar\n" \
             f"year. This may be due to a combination of the following reasons:\n" \
             "   1. Potential misspelling in the geographic specifier(s)\n" \
-            "   2. Unavailable and/or unsupported geographic specifier(s) for the dataset and calendar year."
+            "   2. Unavailable and/or unsupported geographic specifier(s) for the dataset and calendar year.\n" \
+            "   3. Incompatible combination of geographic specifiers."
 
             warn( msg, UserWarning )
             return
@@ -473,7 +474,12 @@ class GeoSpecFmtter:
         """
         
         url = cls._url_fmt(dataset, year)
-        content = fetch_content(url)
+        try:
+            content = fetch_content(url)
+        except:
+            raise APIException(
+                f"The {year} calendar year was not supported for the '{dataset}' dataset."
+            ) from None
         geographies = content.get('fips', None)
 
         if geographies:
@@ -607,20 +613,12 @@ def _dataset_meta_check(dataset: str, year: int) -> None:
             "data. Nonetheless, experimental data for the American Community Survey's 1-year data "
             "estimates can be viewed at https://www.census.gov/programs-surveys/acs/data/experimental-data/1-year.html."
         )
-    try:
-        years = API_METADATA[dataset][0]
-        
-        if year not in years:
-            raise APIException(
-                f"The {year} calendar year was not supported for the '{dataset}' dataset. Supported "
-                f"calendar years for this dataset include one of the following: {years}"
-            )
-        
-    except KeyError:
+    
+    if dataset not in API_METADATA:
         raise KeyError(
             f"'{dataset}' was not a recognizable/supported dataset. Supported datasets include "
             f"one of: {list(API_METADATA)}"
-        ) from None
+        )
 
 
 

@@ -9,6 +9,7 @@ is free to obtain at: https://api.census.gov/data/key_signup.html.
 import typing as t
 import warnings
 
+import aiohttp
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -198,6 +199,7 @@ def download(
 
 
 async def async_download(
+    session: aiohttp.ClientSession,
     dataset: str,
     year: int,
     *,
@@ -220,6 +222,9 @@ async def async_download(
 
     Parameters
     ----------
+    session
+        A(n) :py:class:`aiohttp.ClientSession` interface/context manager.
+    
     dataset
         A supported ACS dataset.
         
@@ -323,7 +328,7 @@ async def async_download(
         drop_annotation_vars = drop_annotation_variables,
         **geographic_specifiers
     )
-    df = await batch_fetch_content(urls, retry_rate, timeout_rate)
+    df = await batch_fetch_content(session, urls, retry_rate, timeout_rate)
     df = _df_cleaner(df, year, meta_d, convert_to_na, **geographic_specifiers)
 
     if include_geometries:
@@ -588,6 +593,12 @@ class _ConfinedDownload:
         self._area_threshold        = area_threshold
         self._geographic_specifiers = geograhic_specifiers
 
+        # Internals for:
+        # - Checking if a query attempt has been made, and
+        # - The outer-layer geography (if an attempt is successful)
+        self._query_attempt   = False
+        self._outer_geography = None
+
     @property
     def area_threshold(self):
         """
@@ -595,6 +606,12 @@ class _ConfinedDownload:
         outer-layer geography area.
         """
         return self._area_threshold
+    
+    @area_threshold.setter
+    def area_threshold(self, new_threshold: t.Union[int, float]):
+        if (0 > new_threshold) or (new_threshold > 1):
+            raise ValueError("Valid area threshold values must be between 0 and 1.")
+        self._area_threshold = new_threshold
     
     @property
     def geographic_specifiers(self):
@@ -604,8 +621,15 @@ class _ConfinedDownload:
         """
         return self._geographic_specifiers
     
+    @geographic_specifiers.setter
+    def geographic_specifiers(self, new_specififers: t.Dict[t.Any, t.Any]):
+        # Reset query attempt state.
+        if self._geographic_specifiers != new_specififers:
+            self._query_attempt = False
+        self._geographic_specifiers = new_specififers
+    
     def __repr__(self) -> str:
-        return "_ConfinedDownload(area_threshold = {}, {})".format(
+        return "_ConfinedDownload(area_threshold = {}, geographic_specifiers = {{{}}})".format(
             self._area_threshold,
             ', '.join([f"{k} = {v}" for k, v in self._geographic_specifiers.items()])
         )
@@ -733,27 +757,43 @@ class _ConfinedDownload:
             include_geometries = True,
             **geographic_specifiers
         )
+        # To accomodate for cases when a TIGER shapefile cannot be found (thanks
+        # to our earlier configurations, a warning is automatically raised)
+        if not isinstance(inner_data, gpd.GeoDataFrame): 
+            return inner_data
+        
         inner_crs = inner_data.crs # <- Keep the original Coordinate Referencing System
 
-        outer_data = download(
-            dataset = dataset,
-            year = year,
-            variables = variables,
-            tables = tables,
-            drop_annotation_variables = drop_annotation_variables,
-            convert_to_na = convert_to_na,
-            with_geometry_id_columns = with_geometry_id_columns,
-            include_geometries = True,
-            **self._geographic_specifiers
-        )
+        outer_data = self._get_outer_download(dataset, year, variables, tables)
 
+        if outer_data is None:
+            msg = \
+            f"\nCould not locate the appropriate TIGER shapefile for the outer-layer set " \
+            f"of geographies given by {self._geographic_specifiers} for the {year} calendar\n" \
+            f"year.\n" \
+            "\nAs a result, the returned set of data corresponds to data downloaded solely from " \
+            "the reference of the inner-layer set of geographic specifiers."
+
+            warnings.warn( msg, UserWarning )
+            return inner_data
+        
+        # Necessary to avoid modifying the referenced object
+        outer_data = outer_data.copy()
+
+        confined_data = self.__confined_data_fmtter(inner_data, outer_data, inner_crs, include_geometries)
+
+        return confined_data
+    
+    def __confined_data_fmtter(
+        self,
+        inner_data: gpd.GeoDataFrame,
+        outer_data: gpd.GeoDataFrame,
+        inner_data_crs: t.Any,
+        include_geometries: bool
+    ) -> t.Union[pd.DataFrame, gpd.GeoDataFrame]:
         # Project to Web-Mercator
         inner_data.to_crs(3857, inplace=True)
         outer_data.to_crs(3857, inplace=True)
-
-        # Rename columns
-        inner_data.columns = [col.__add__('_inner') if col != 'geometry' else 'geometry' for col in inner_data.columns]
-        outer_data.columns = [col.__add__('_outer') if col != 'geometry' else 'geometry' for col in outer_data.columns]
 
         # Keep the geometries
         inner_data['inner_geometry'] = inner_data.geometry
@@ -768,26 +808,73 @@ class _ConfinedDownload:
             rsuffix = 'outer'
         )
 
-        # Keep the inner data (i.e. the smaller of the two)
-        drop_cols = [col for col in confined_data.columns if col.endswith('_outer')]
-        confined_data.drop(columns = drop_cols, inplace = True)
-
         # Thresholding
         thresholded_data = confined_data[
             confined_data['inner_geometry'].intersection(confined_data['outer_geometry']).area >=
-            0.8 * confined_data['inner_geometry'].area
+            self._area_threshold * confined_data['inner_geometry'].area
         ]
 
-        # Clean column labels (to ensure consistency w/o confinement) and reset index
-        thresholded_data.drop(columns = ['inner_geometry', 'outer_geometry'], inplace = True)
+        # Cleaning (to ensure consistency w/o confinement)
+        thresholded_data.drop(columns = ['inner_geometry', 'outer_geometry',
+                                         *[col for col in thresholded_data if col.endswith('_outer')]],
+                              inplace = True)
         thresholded_data.columns = [col.rstrip('_inner') for col in thresholded_data.columns]
         thresholded_data.reset_index(drop = True, inplace=True)
 
         # Restore to the original/inner CRS
-        thresholded_data.to_crs(inner_crs, inplace=True)
+        thresholded_data.to_crs(inner_data_crs, inplace=True)
 
         # Drop the geometry column (if indicated False)
         if not include_geometries:
             thresholded_data.drop(columns = ['geometry'], inplace = True)
 
         return thresholded_data
+        
+
+    
+    def _get_outer_download(
+        self,
+        dataset: str,
+        year: int,
+        variables: t.Optional[t.Union[t.List[str], str]] = None,
+        tables: t.Optional[t.Union[t.List[str], str]] = None,
+    ) -> t.Optional[gpd.GeoDataFrame]:
+        """Internal for retrieving the outer-layer geography."""
+        self.__set_outer_download(dataset, year, variables, tables)
+        return self._outer_geography
+
+    def __set_outer_download(
+        self,
+        dataset: str,
+        year: int,
+        variables: t.Optional[t.Union[t.List[str], str]] = None,
+        tables: t.Optional[t.Union[t.List[str], str]] = None,
+    ) -> None:
+        """Internal for the actual call to the outer-layer geography."""
+        # Run an attempt only if we have not previous made a previous
+        # attempt to query the outer-layer geographies.
+        if not self._query_attempt:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                
+                outer_data = download(
+                    dataset = dataset,
+                    year = year,
+                    variables = variables,
+                    tables = tables,
+                    include_geometries = True,
+                    **self._geographic_specifiers
+                )
+
+                # Given our downloads are confined to the outer-layer
+                # of geographies, retain only the geometry column.
+                if isinstance(outer_data, gpd.GeoDataFrame):
+                    outer_data = outer_data[['geometry']].copy()
+                
+                self._outer_geography = outer_data if isinstance(outer_data, gpd.GeoDataFrame) else None
+                
+                # Set the query attempt to True, indicating if future queries
+                # are made w/ the same set of geographic specifiers, we should
+                # retrieve the stored info from the instance and don't run API
+                # calls.
+                self._query_attempt   = True

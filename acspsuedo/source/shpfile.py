@@ -13,7 +13,7 @@ See also the addendum that follows in this module for extra information.
 """
 
 # ADDENDUM #1 (version 0.2.1)
-# We to add deterministic rules for some geographic components, but not
+# We add deterministic rules for some geographic components, but not
 # for all. This is for two reasons:
 # 1. The Bureau has not maintained a uniform naming criteria throughout
 #    the years (e.g. 2012 bucks the predicted congressional district
@@ -221,7 +221,7 @@ class ShpFileHandler:
         return base_url, path
 
 
-    def _tiger_url_fmtter_pre_2010_and_2010(self, year: int, **geographic_specifiers: t.Any):
+    def _tiger_url_fmtter_pre_2008_and_2010(self, year: int, **geographic_specifiers: t.Any):
         _, scope, folder, outer = ShpFileHandler._tiger_init(year, **geographic_specifiers)
 
         if outer == 'state':
@@ -262,7 +262,7 @@ class ShpFileHandler:
         if 2008 <= year <= 2009:
             return self._tiger_url_fmtter_2008_2009(year, **geographic_specifiers)
         elif year == 2010 or year < 2008:
-            return self._tiger_url_fmtter_pre_2010_and_2010(year, **geographic_specifiers)
+            return self._tiger_url_fmtter_pre_2008_and_2010(year, **geographic_specifiers)
         else:
             return self._tiger_url_fmtter_post_2010(year, **geographic_specifiers)
 

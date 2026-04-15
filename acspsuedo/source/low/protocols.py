@@ -43,6 +43,7 @@ def fetch_table(urls: t.List[str]) -> pd.DataFrame:
 
 
 async def batch_fetch_content(
+    session: aiohttp.ClientSession,
     urls: t.Union[list[str], str],
     retry_rate: int = 30,
     timeout_rate: t.Union[float, int] = 0.1
@@ -50,7 +51,7 @@ async def batch_fetch_content(
     """
     Asynchronous method to fetch data from the Census Bureau.
     """
-    results = await _batch_fetch_content(urls, retry_rate, timeout_rate)
+    results = await _batch_fetch_content(session, urls, retry_rate, timeout_rate)
     comp_urls = [r.get('url', '') for r in results]
     contents = [r.get('content', [[], []]) for r in results]
 
@@ -71,6 +72,7 @@ async def batch_fetch_content(
 
 
 async def _batch_fetch_content(
+    session: aiohttp.ClientSession,
     urls: t.Union[list[str], str],
     retry_rate: int = 30,
     timeout_rate: t.Union[float, int] = 0.1
@@ -103,9 +105,8 @@ async def _batch_fetch_content(
     marked as'interrupted' and the returned content would contain an
     error message.
     """
-    async with aiohttp.ClientSession() as session:
-        results = await _fetch_content(urls, session, retry_rate, timeout_rate)
-        return results
+    results = await _fetch_content(urls, session, retry_rate, timeout_rate)
+    return results
 
 
 
