@@ -1,6 +1,6 @@
 # [acspsuedo](https://github.com/ramindersinghdubb/acspsuedo/)
 
-[![License](https://img.shields.io/badge/License-MIT-blue)](#license) [![issues - acspsuedo](https://img.shields.io/github/issues/ramindersinghdubb/acspsuedo)](https://github.com/ramindersinghdubb/acspsuedo/issues) [![Coverage Status](./coverage/coverage-badge.svg)](./coverage/index.html)
+[![License](https://img.shields.io/badge/License-MIT-blue)](#licensing) [![issues - acspsuedo](https://img.shields.io/github/issues/ramindersinghdubb/acspsuedo)](https://github.com/ramindersinghdubb/acspsuedo/issues) [![Coverage Status](./coverage/coverage-badge.svg)](https://ramindersinghdubb.github.io/acspsuedo)
 
 Objects for handling the extraction of American Community Survey data.
 
