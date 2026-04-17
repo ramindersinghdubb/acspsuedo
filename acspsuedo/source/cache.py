@@ -433,12 +433,3 @@ class VariableCache:
                 data_df[var] = data_df[var].astype(object)
 
         return data_df
-    
-
-    @classmethod
-    def _flush_var_metadata_cache(cls, dataset: str, year: int):
-        VariableCache.__CACHE_VARIABLES_BY_DATASET_YEAR[dataset][year].clear()
-
-    @classmethod
-    def _flush_tbl_metadata_cache(cls, dataset: str, year: int):
-        VariableCache.__CACHE_TABLES_BY_DATASET_YEAR[dataset][year].clear()
