@@ -38,6 +38,7 @@ class TestDownload(unittest.TestCase):
         """
         Formatted URL for sending queries.
         """
+        apq.api_key_config.API_KEY = None
         URL = 'https://api.census.gov/data/2020/acs/acs5?get=B25058_001E,GEO_ID,NAME&for=state:06'
         fmt_url, _, _ = apq._fmt_download_url(
             self.DATASET,
@@ -61,6 +62,20 @@ class TestDownload(unittest.TestCase):
 
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual([self.CONTENT[1]], df.values.tolist())
+
+    def test_download_geometries_non_existent_shpfile(self):
+        """
+        A scenario where users query data alongside their geographic info,
+        but TIGER shapefiles are not available.
+        """
+        with self.assertWarns(UserWarning):
+            apq.download(
+                self.DATASET,
+                2011,
+                variables = self.VARIABLES,
+                zip_code_tabulation_area = '*',
+                include_geometries = True
+            )
 
     def test_failed_download_unsupported_dataset(self):
         """

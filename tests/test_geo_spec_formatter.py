@@ -6,10 +6,9 @@ import unittest
 
 from acspsuedo.source.geog import GeoSpecFmtter, GeoScopeException
 from acspsuedo.source.low.exceptions import APIException
-from acspsuedo.datasets import ACS1
+from acspsuedo.datasets import ACS1, ACS5
 from acspsuedo.fips.states import MONTANA
 from acspsuedo.fips.counties.montana import Lewis_And_Clark_County
-
 
 
 
@@ -32,6 +31,31 @@ class TestGeoSpecFmtter(unittest.TestCase):
         self.GEO_SPECS_NOT_SUPPORTED = ['state', 'block_group']
 
         self.GEO_SPECS_UNSUPPORTED_WC = {'state': '*', 'school_district_unified': '*'}
+
+    def test_interface_instance(self):
+        """
+        Check the dunder methods for instances of the interface.
+        """
+        gsf_obj = self.GSF_INTERFACE(state = '53', place = '63000')
+        self.assertTrue(len(gsf_obj) == 2)
+
+        self.assertEqual(str(gsf_obj), "GeoSpecFmtter(state = '53', place = '63000')")
+
+        self.assertIsInstance(gsf_obj(self.DATASET, self.YEAR), str)
+
+        self.assertEqual(gsf_obj.geog_specifiers, {'place': '63000', 'state': '53'})
+
+        gsf_obj.geog_specifiers = {'state': '53'}
+
+    def test_check_path_existence(self):
+        """
+        Check if our path existence locator works.
+        """
+        self.GSF_INTERFACE.check_path_existence(
+            self.DATASET,
+            self.YEAR,
+            'state'
+        )
 
     def test_geo_spec_formatter_montana_counties_acs1_2014(self):
         """
@@ -57,14 +81,35 @@ class TestGeoSpecFmtter(unittest.TestCase):
         
         self.assertEqual(fmtter, self.GEO_SPECS_LEWIS_AND_CLARK_COUNTY_FMTTER)
 
-    def test_unsupported_year_acs1_2020(self):
+    def test_partial_path_inference_acs5_2009(self):
         """
-        Check if an error is raised for an unsupported year.
+        Check if the default to partial inference works.
+        """
+        with self.assertRaises(GeoScopeException):
+            self.GSF_INTERFACE.get_fmt_path(
+                ACS5, 2009, block_group = '*', foo = 'bar'
+            )
+
+        with self.assertRaises(GeoScopeException):
+            self.GSF_INTERFACE._infer_path(
+                ACS5, 2009, school_district_elementary = '*'
+            )
+
+    def test_unsupported_year_acs1_2020_2004(self):
+        """
+        Check if an error is raised for unsupported years.
         """
         with self.assertRaises(APIException):
             self.GSF_INTERFACE.get_fmt_path(
                 self.DATASET,
                 self.PANDEMIC_YEAR,
+                **self.GEO_SPECS_MONTANA_COUNTIES
+            )
+
+        with self.assertRaises(APIException):
+            self.GSF_INTERFACE.get_fmt_path(
+                self.DATASET,
+                2004,
                 **self.GEO_SPECS_MONTANA_COUNTIES
             )
 

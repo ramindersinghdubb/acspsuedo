@@ -3,11 +3,18 @@ Tests for the shapefile handler interface.
 """
 
 import unittest
+import shutil
+from pathlib import Path
 
 from acspsuedo.query import shapefile_handler
-from acspsuedo.source.shpfile import ShpfileWarning, ShpfileFormatterException
+from acspsuedo.source.shpfile import ShpFileHandler, ShpfileWarning, ShpfileFormatterException
 
-shapefile_handler.auto_cache = False
+from acspsuedo.fips.states import PUERTO_RICO
+
+
+
+shapefile_handler.cache_path = Path.cwd() / 'tests' / 'cache'
+
 
 
 class TestShpFileHandler(unittest.TestCase):
@@ -27,6 +34,53 @@ class TestShpFileHandler(unittest.TestCase):
         self.IDAHO_TRACT_2010_URL   = 'https://www2.census.gov/geo/tiger/TIGER2010/TRACT/2010/tl_2010_16_tract10.zip'
 
         self.MISSING_GEOG_SPECS_NY_PUMA = {'public_use_microdata_area': '*'}
+
+    def test_shapefile_handler_instance(self):
+        """
+        Simulate a scenario where a user introspects the shapefile handler interface.
+        """
+        sfh_interface = ShpFileHandler(cache_path = Path.cwd() / 'tests' / 'instance_cache')
+
+        # Auto caching preferences
+        self.assertTrue(sfh_interface.auto_cache)
+        sfh_interface.auto_cache = False
+        self.assertFalse(sfh_interface.auto_cache)
+
+        # Tracking new caches
+        self.assertTrue(sfh_interface.track_updated_cache)
+        sfh_interface.track_updated_cache = False
+        self.assertFalse(sfh_interface.track_updated_cache)
+
+        # Cache path preferences
+        self.assertEqual(sfh_interface.cache_path, Path.cwd() / 'tests' / 'instance_cache')
+        with self.assertRaises(AttributeError):
+            del sfh_interface.cache_path
+
+    def test_shapefile_handler_tracking(self):
+        """
+        Simulate a scenario where a user updates the cache location.
+        """
+        old_cache = Path.cwd() / 'tests' / 'instance_cache'
+        sfh_interface = ShpFileHandler(cache_path = old_cache)
+
+        sfh_interface._cache_fetch_tiger_shpfile(2013, state = PUERTO_RICO, subminor_civil_division = '*')
+        sfh_interface._cache_fetch_tiger_shpfile(2020, state = PUERTO_RICO, subminor_civil_division = '*')
+        
+        new_cache = Path.cwd() / 'tests' / 'new_instance_cache'
+        new_cache.mkdir(parents = True, exist_ok = True)
+        sfh_interface.cache_path = new_cache
+        
+        sfh_interface._cache_fetch_tiger_shpfile(2013, state = PUERTO_RICO, subminor_civil_division = '*')
+        sfh_interface._cache_fetch_tiger_shpfile(2020, state = PUERTO_RICO, subminor_civil_division = '*')
+        sfh_interface.cache_path = old_cache
+
+        new_cache.rmdir()
+
+        self.assertTrue(any(old_cache.iterdir()))
+
+        shutil.rmtree(old_cache)
+
+        self.assertFalse(old_cache.exists())
     
 
     def test_shpfile_url_constructor_2000_zcta(self) -> None:
