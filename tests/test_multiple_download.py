@@ -6,9 +6,11 @@ import unittest
 from pathlib import Path
 from functools import partial
 
+import pandas as pd
+
 import acspsuedo.query as apq
 from acspsuedo.datasets import ACS5_SUBJECT
-from acspsuedo.fips.states import NORTH_DAKOTA, MINNESOTA, PUERTO_RICO
+from acspsuedo.fips.states import NORTH_DAKOTA, MINNESOTA, NEW_YORK, NEVADA
 from acspsuedo.source.low.exceptions import APIException
 
 
@@ -50,13 +52,20 @@ class TestMultipleDownload(unittest.TestCase):
 
     
     def test_lacking_state_outer_scope_nation_wide_congressional_districts_2024_download(self) -> None:
-        apq.download(
-            dataset = self.DATASET,
-            year = 2024,
-            variables = 'NAME',
-            congressional_district = '*',
-            include_geometries = True
-        )
+        """
+        Simulate a scenario where a user queries a certain scope (congressional
+        districts in 2024) that requires a state outer-scope (for geographic info
+        from TIGER shapefiles).
+
+        Note that we have proxied this via two states, New York and Nevada,
+        because of server-based blocking.
+        """
+        NY_NV_congressional_districts = pd.DataFrame({
+            'STATE': [NEVADA, NEW_YORK],
+            'CONGRESSIONAL_DISTRICT': ['01', '01'],
+            'YEAR': [2024, 2024],
+        })
+        apq._get_shpfile(NY_NV_congressional_districts, 2024, congressional_district = '*')
 
     
     def test_ND_congressional_districts_2010_download(self) -> None:
