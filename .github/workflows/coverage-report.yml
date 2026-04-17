@@ -88,6 +88,8 @@ jobs:
           coverage run -m pytest
           coverage report
           coverage html -d coverage
+          coverage xml -o ./coverage/coverage.xml
+          genbadge coverage -i ./coverage/coverage.xml -o ./coverage/coverage-badge.svg
           # This may sometimes accompany coverage reports
           rm -f ./coverage/.gitignore
       
