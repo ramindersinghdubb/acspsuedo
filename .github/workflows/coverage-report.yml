@@ -103,7 +103,6 @@ jobs:
           git add ./coverage/*.js
           git add ./coverage/*.css
           git add ./coverage/*.png
-          git add ./tests/cache/**
           git diff --staged --quiet || git commit -m "Generate coverage report" --allow-empty
 
       #--------------
