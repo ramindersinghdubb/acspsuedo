@@ -1,0 +1,52 @@
+name: deploy-pages
+
+on:
+  workflow_run:
+    workflows: [coverage-report]
+    types:
+      - completed
+
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  
+  deploy-pages:
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success'}}
+    
+    steps:
+      #---------------
+      # Checkout repo
+      #---------------
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      #---------------
+      # Setup GH pages
+      #---------------
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      #----------------
+      # Upload artifact
+      #----------------
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './coverage'
+        
+      #-------------
+      # Deploy page
+      #-------------
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

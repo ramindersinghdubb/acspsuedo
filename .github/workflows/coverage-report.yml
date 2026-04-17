@@ -1,0 +1,114 @@
+name: coverage-report
+
+on:
+
+  schedule:
+      - cron: '0 13 * * 1' # Mondays, 13:00 UTC (9:00 EST)
+  
+  workflow_dispatch:
+
+jobs:
+
+  generate-coverage-report:
+    name: Generate coverage report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      #---------------
+      # Checkout repo
+      #---------------
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+      
+      #--------------
+      # Setup Python
+      #--------------
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          
+      #-------------------------
+      # Check for cached Poetry
+      #-------------------------
+      - name: Load cached Poetry
+        id: cached-poetry
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: poetry-interpreter
+
+      #----------------------------
+      # Install & configure Poetry
+      #----------------------------
+      - name: Install Poetry
+        if: steps.cached-poetry.outputs.cache-hit != 'true'
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+
+      #----------------------------------
+      # Load cached venv if cache exists
+      #----------------------------------
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      
+      #----------------------------------------------
+      # Install dependencies if cache does not exist
+      #----------------------------------------------
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      #----------------------
+      # Install root project
+      #----------------------
+      - name: Install project
+        run: poetry install --no-interaction
+      
+      #--------------------------
+      # Generate coverage report
+      #--------------------------
+      - name: Run coverage and create coverage report
+        env:
+          CENSUS_BUREAU_API_KEY: ${{secrets.GH_API_KEY}}
+        run: |
+          source .venv/bin/activate
+          coverage run -m pytest
+          coverage report
+          coverage html -d coverage
+          # This may sometimes accompany coverage reports
+          rm -f ./coverage/.gitignore
+      
+      #-------------
+      # Stage files
+      #-------------
+      - name: Stage files
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ./tests/cache/**
+          git add ./coverage/*.html
+          git add ./coverage/*.js
+          git add ./coverage/*.css
+          git add ./coverage/*.png
+          git add ./tests/cache/**
+          git diff --staged --quiet || git commit -m "Generate coverage report" --allow-empty
+
+      #--------------
+      # Commit files
+      #--------------
+      - name: Commit files
+        run: |
+          git push -f
