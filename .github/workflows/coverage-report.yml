@@ -29,6 +29,7 @@ jobs:
       #--------------
       - name: Setup Python
         uses: actions/setup-python@v6
+        id: setup-python
         with:
           python-version: '3.12'
           
@@ -84,7 +85,7 @@ jobs:
         env:
           CENSUS_BUREAU_API_KEY: ${{secrets.GH_API_KEY}}
         run: |
-          . .venv/bin/activate
+          source .venv/bin/activate
           coverage run -m pytest
           coverage report
           coverage html -d coverage
