@@ -84,6 +84,7 @@ jobs:
         env:
           CENSUS_BUREAU_API_KEY: ${{secrets.GH_API_KEY}}
         run: |
+          . .venv/bin/activate
           coverage run -m pytest
           coverage report
           coverage html -d coverage
