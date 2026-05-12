@@ -4,6 +4,7 @@
 
 Objects for handling the extraction of American Community Survey data.
 
+**As of May 2026, the Census Bureau requires API keys for any and all interactions with the Census Bureau's API.** Sign up for a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html).
 
 ## Installation
 
@@ -71,7 +72,9 @@ An example of some geospatial visualization with the data generated from the que
 
 [<img src="./notebooks/images/CaliRentalMarkets.png" alt="California Rental Market, 2023" height=600>](./notebooks/Querying_Data_ACS5_2023.ipynb)
 
-Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html). We have implemented a interface via `acspsuedo.query.api_key_config` in which users can set their API keys. See the [`notebooks/API_Key`](https://github.com/ramindersinghdubb/acspsuedo/blob/main/notebooks/API_Key.ipynb) notebook.
+~~Note that an API key is recommended for querying multiple (50+) datasets in a session. You can obtain a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html). We have implemented a interface via `acspsuedo.query.api_key_config` in which users can set their API keys. See the [`notebooks/API_Key`](https://github.com/ramindersinghdubb/acspsuedo/blob/main/notebooks/API_Key.ipynb) notebook.~~
+
+**As of May 2026, the Census Bureau requires API keys for any and all interactions with the Census Bureau's API.** Sign up for a free API key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html).
 
 ## Repo Structure
 
@@ -79,18 +82,19 @@ Note that an API key is recommended for querying multiple (50+) datasets in a se
 acspsuedo/
 ├── .github/
 │   └── workflows/
-│       └── acs-api.yml      # CI/CD to ensure upkeep with API releases
+│       ├── ...
+│       └── run-scripts.yml      # CI/CD to ensure upkeep with API releases
 │
 ├── acspsuedo/
-│   ├── fips/                # Federal Information Processing Standard (FIPS) Codes
+│   ├── fips/                    # Federal Information Processing Standard (FIPS) Codes
 │   │   └── ...
 │   │
 │   ├── source/
 │   │   └── ...
 │   │
 │   ├── __init__.py
-│   ├── datasets.py          # Info on supported datasets
-│   └── query.py             # Main interface
+│   ├── datasets.py              # Info on supported datasets
+│   └── query.py                 # Main interface
 │
 ├── notebooks/
 │   └── ...

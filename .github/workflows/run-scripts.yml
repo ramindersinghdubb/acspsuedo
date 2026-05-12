@@ -79,6 +79,8 @@ jobs:
       # Run script
       #------------
       - name: Run scripts
+        env:
+          CENSUS_BUREAU_API_KEY: ${{secrets.GH_API_KEY}}
         run: |
           poetry run python utils/datasets.py
       

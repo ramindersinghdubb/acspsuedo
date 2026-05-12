@@ -145,7 +145,7 @@ class VariableCache:
         all_variables = json_content.get("variables", None)
         if not all_variables:
             warn(
-                f"\nThe '{table}' table has no known metadata for the '{dataset}' dataset \n"\
+                f"\nThe '{table}' table has no known metadata for the '{dataset}' dataset "
                 f"during the {year} calendar year.",
                 MetadataWarning
             )

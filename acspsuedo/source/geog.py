@@ -12,6 +12,7 @@ from warnings import warn
 from logging import getLogger
 
 
+from acspsuedo.source.low.api_key import api_key_config
 from acspsuedo.source.low.protocols import fetch_content
 from acspsuedo.source.low.exceptions import APIException
 from acspsuedo.source.shpfile_fmt import GEO_SPEC_METADATA
@@ -134,8 +135,8 @@ class GeoSpecFmtter:
             return paths
         else:
             msg = \
-            f"\nCould not find any fully-specified paths corresponding to " \
-            f"{geographic_specifier} in the '{dataset}' dataset for the {year} calendar\n" \
+            f"Could not find any fully-specified paths corresponding to " \
+            f"{geographic_specifier} in the '{dataset}' dataset for the {year} calendar " \
             f"year. This may be due to a combination of the following reasons:\n" \
             "   1. Potential misspelling in the geographic specifier(s)\n" \
             "   2. Unavailable and/or unsupported geographic specifier(s) for the dataset and calendar year.\n" \
@@ -528,82 +529,15 @@ class GeoSpecFmtter:
     @classmethod
     def _url_fmt(cls, dataset: str, year: int) -> str:
         _dataset_meta_check(dataset, year)
-        geography_url = 'https://api.census.gov/data/{}/{}/geography.json'.format(year, dataset)
+        geography_url = 'https://api.census.gov/data/{}/{}/geography.json?{}'.format(
+            year,
+            dataset,
+            api_key_config._get_api_key()
+        )
         
         return geography_url
 
 
-class ApiKeyConfig:
-    """
-    Formatter for user-defined Census Bureau API keys.
-    """
-
-    def __init__(self) -> None:
-        self._FILE_PATH = Path.cwd() / 'api_key.txt'
-        self._OS_ENV_LOCATION  = 'CENSUS_BUREAU_API_KEY'
-
-        self._API_KEY = None
-
-    @property
-    def API_KEY(self):
-        """
-        The API key. Note that this can be directly set, if
-        you prefer.
-        """
-        return self._API_KEY
-    
-    @API_KEY.setter
-    def API_KEY(self, new_key: t.Any):
-        self._API_KEY = new_key
-
-    @property
-    def OS_ENV_LOCATION(self):
-        """
-        The operation system (OS) environment location to the
-        API key. Note that this is prioritized first.
-        """
-        return self._OS_ENV_LOCATION
-    
-    @OS_ENV_LOCATION.setter
-    def OS_ENV_LOCATION(self, new_location: str):
-        self._OS_ENV_LOCATION = new_location
-
-    @property
-    def FILE_PATH(self):
-        """
-        The textfile path containing the API key. Note that this
-        is prioritized second.
-        """
-        return self._FILE_PATH
-    
-    @FILE_PATH.setter
-    def FILE_PATH(self, new_file_path: t.Union[str, Path]):
-        self._FILE_PATH = new_file_path
-
-    def _get_api_key(self):
-        self._set_api_key()
-
-        if self.API_KEY:
-            return f'&key={self.API_KEY}'
-        else:
-            logger.debug('Could not locate a Census Bureau API key.')
-            return ''
-
-
-    def _set_api_key(self):
-        if not self.API_KEY:
-            # First, check the operating system environment.
-            key = os.environ.get(self.OS_ENV_LOCATION, None)
-
-            # Next, check the file.
-            if not key:
-                try:
-                    with open(self.FILE_PATH, 'r') as f:
-                        key = f.readlines()[0]
-                except:
-                    key = None
-            
-            self._API_KEY = key
 
 def _dataset_meta_check(dataset: str, year: int) -> None:
     if 'acs1' in dataset and year == 2020:

@@ -4,6 +4,7 @@ and metadata on American Community Survey datasets.
 
 Executed daily.
 """
+import os
 from datetime import datetime
 import logging
 
@@ -59,8 +60,8 @@ def create_acs_api_dataset() -> pd.DataFrame:
     Download the Census Bureau's American Community Survey
     APIs into a formatted dataset.
     """
-    URL = 'https://api.census.gov/data/'
-    logger.info("Running request to '%s'...", URL)
+    URL = 'https://api.census.gov/data/%s' % (os.environ['CENSUS_BUREAU_API_KEY'])
+    logger.info("Running request to the Bureau's APIs...")
     CENSUS_DATA_DICT = fetch_content(URL)
 
     logger.info("Success! Cleaning API information...")

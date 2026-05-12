@@ -39,7 +39,7 @@ class TestDownload(unittest.TestCase):
         Formatted URL for sending queries.
         """
         key_fmt = apq.api_key_config._get_api_key()
-        URL = f'https://api.census.gov/data/2020/acs/acs5?get=B25058_001E,GEO_ID,NAME&for=state:06{key_fmt}'
+        URL = f'https://api.census.gov/data/2020/acs/acs5?get=B25058_001E,GEO_ID,NAME&for=state:06&{key_fmt}'
         fmt_url, _, _ = apq._fmt_download_url(
             self.DATASET,
             self.YEAR,

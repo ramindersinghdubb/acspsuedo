@@ -15,17 +15,18 @@ import geopandas as gpd
 import numpy as np
 
 from acspsuedo.fips import STATE_FIPS
-from acspsuedo.source.geog import GeoSpecFmtter, ApiKeyConfig
+from acspsuedo.source.geog import GeoSpecFmtter
 from acspsuedo.source.shpfile import ShpfileFormatterException
 from acspsuedo.source.shpfile_fmt import GEO_SPEC_METADATA
 from acspsuedo.source.cache import VariableCache
 from acspsuedo.source.na_values import REPLACEMENT_VALUES
 from acspsuedo.source.low.protocols import fetch_table, batch_fetch_content
+# from acspsuedo.source.low.api_key import api_key_config, ApiKeyConfig
 import acspsuedo.source.shpfile
+import acspsuedo.source.low.api_key
 
 
-
-api_key_config: ApiKeyConfig = ApiKeyConfig()
+api_key_config: acspsuedo.source.low.api_key.ApiKeyConfig = acspsuedo.source.low.api_key.api_key_config
 """
 Configuration settings for the API key.
 
@@ -424,7 +425,7 @@ def _fmt_url(dataset: str, year: int, **geog_specifiers):
     Formatter skeleton for the URLs.
     """
     geo_specs, geog_specifiers = GeoSpecFmtter.get_fmt_path(dataset, year, **geog_specifiers)
-    url_fmtter = 'https://api.census.gov/data/{year}/{dataset}?get={var}{geo_specs}{key}'
+    url_fmtter = 'https://api.census.gov/data/{year}/{dataset}?get={var}{geo_specs}&{key}'
 
     fmt_url = url_fmtter.format(
         var       = '{}',

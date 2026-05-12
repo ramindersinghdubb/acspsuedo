@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Version 0.2.5
+May 12, 2026
+
+### Fixes
+
+- In-line with the Census Bureau's new guidelines (as of May 2026), API keys **must** be used for interacting with the Census Bureau API. In accordance, incorporated proper exception handling
 
 
 ## Version 0.2.4

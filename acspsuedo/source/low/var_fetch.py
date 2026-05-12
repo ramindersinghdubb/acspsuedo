@@ -5,6 +5,7 @@ Fetch handler for variable/table metadata.
 import typing as t
 
 from acspsuedo.source.low.protocols import fetch_content
+from acspsuedo.source.low.api_key import api_key_config
 
 
 
@@ -40,7 +41,7 @@ class VariableFetchMixin:
         URL constructor to fetch a variable's metadata.
         """
         variable = f'/{variable}' if variable else ''
-        url = f'{VariableFetchMixin._base_url_comp}/{VariableFetchMixin._dataset_year_url_comp(dataset, year)}/variables{variable}.json'
+        url = f'{VariableFetchMixin._base_url_comp}/{VariableFetchMixin._dataset_year_url_comp(dataset, year)}/variables{variable}.json?{api_key_config._get_api_key()}'
         
         return url
 
@@ -50,7 +51,7 @@ class VariableFetchMixin:
         URL constructor to fetch a table's metadata.
         """
         table = f'/{table}' if table else ''
-        url = f'{VariableFetchMixin._base_url_comp}/{VariableFetchMixin._dataset_year_url_comp(dataset, year)}/groups{table}.json'
+        url = f'{VariableFetchMixin._base_url_comp}/{VariableFetchMixin._dataset_year_url_comp(dataset, year)}/groups{table}.json?{api_key_config._get_api_key()}'
         
         return url
     

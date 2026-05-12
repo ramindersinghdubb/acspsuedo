@@ -93,9 +93,6 @@ class TestDownload(unittest.TestCase):
 
         self.assertIsInstance(df, pd.DataFrame)
 
-    # NOTE:
-    # Due to our deterministic rules, we have provided
-
     def test_confined_query_download_without_inner_geometries(self):
         """
         Simulate a known scenario whereby the geographic information for the
