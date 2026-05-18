@@ -416,6 +416,7 @@ def _fmt_download_url(
     vars, meta_dict = variable_cache._vars_metadata(dataset, year, vars, tbls, drop_annotation_vars)
 
     urls = [url.format(','.join(vars[i:i+50]) ) for i in range(0, len(vars) + 1, 50) ]
+    urls = [i for i in urls if 'get=&' not in i]
 
     return urls, meta_dict, geog_specifiers
 
