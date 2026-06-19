@@ -1,5 +1,5 @@
 """
-LAST UPDATED: June 18, 2026
+LAST UPDATED: June 19, 2026
 
 Metadata for each of the United States Census Bureau
 American Community Survey's datasets.
